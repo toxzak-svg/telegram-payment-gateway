@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: tg_payment_postgres
+    environment:
+      POSTGRES_USER: tg_user
+      POSTGRES_PASSWORD: tg_pass
+      POSTGRES_DB: tg_payment_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tg_user -d tg_payment_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: tg_payment_api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://tg_user:tg_pass@postgres:5432/tg_payment_dev
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./packages/api/src:/app/packages/api/src
+      - ./packages/core/src:/app/packages/core/src
+    command: npm run dev
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: tg_payment_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
