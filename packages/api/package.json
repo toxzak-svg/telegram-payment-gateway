@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "description": "Express.js API server for payment gateway",
   "main": "dist/server.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@tg-payment/core": "*",
@@ -19,7 +23,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "pg": "^8.11.3",
-    "pg-promise": "^11.5.2",
     "joi": "^17.11.0",
     "uuid": "^9.0.1",
     "winston": "^3.11.0",
@@ -29,7 +32,9 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.9.0",
+    "@types/pg": "^8.10.9",
     "ts-node": "^10.9.1",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.2.2",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.1",
