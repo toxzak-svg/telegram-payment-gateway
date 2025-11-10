@@ -3,20 +3,14 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// Build connection config
-const config = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME || 'payment_gateway',
-  user: process.env.DB_USER || 'postgres',
-};
+// Build connection string without password
+const connectionString = `postgresql://${process.env.DB_USER || 'postgres'}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME || 'payment_gateway'}`;
 
-// Only add password if it exists in env
-if (process.env.DB_PASSWORD) {
-  config.password = process.env.DB_PASSWORD;
-}
+console.log('🔧 Connection string:', connectionString);
 
-const client = new Client(config);
+const client = new Client({
+  connectionString,
+});
 
 // Run migrations
 async function runMigrations() {
@@ -71,7 +65,7 @@ async function runMigrations() {
 
     console.log('🎉 All migrations completed successfully');
   } catch (error) {
-    console.error('❌ Migration error:', error);
+    console.error('❌ Migration error:', error.message);
     process.exit(1);
   } finally {
     await client.end();

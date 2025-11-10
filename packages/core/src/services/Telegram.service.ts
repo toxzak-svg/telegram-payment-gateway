@@ -84,7 +84,7 @@ export class TelegramService {
         const isValid = await this.verifyPreCheckout({
           pre_checkout_query: ctx.preCheckoutQuery,
         });
-        
+
         if (isValid) {
           await ctx.answerPreCheckoutQuery(true);
         } else {
@@ -102,7 +102,7 @@ export class TelegramService {
    */
   async processSuccessfulPayment(payload: TelegramPaymentPayload): Promise<PaymentRecord> {
     const payment = payload.message?.successful_payment;
-    
+
     if (!payment) {
       throw new Error('Invalid payment payload');
     }
@@ -137,46 +137,23 @@ export class TelegramService {
    */
   async verifyPreCheckout(query: TelegramPaymentPayload): Promise<boolean> {
     const preCheckout = query.pre_checkout_query;
-    
+
     if (!preCheckout) {
       return false;
     }
 
-    }
-  }
-
-  /**
-   * Get Telegraf bot instance for middleware integration
-   */
-  getBot(): Telegraf {
-    return this.bot;
-export default TelegramService;
-  }
-}
-
     console.log('🔍 Verifying pre-checkout:', {
-      console.error('❌ Failed to get webhook info:', error);
-      throw error;
       userId: preCheckout.from.id,
       amount: preCheckout.total_amount,
-    } catch (error) {
       currency: preCheckout.currency,
-    try {
-      return await this.bot.telegram.getWebhookInfo();
     });
-   */
-  async getWebhookInfo(): Promise<any> {
 
     // TODO: Add custom validation logic
-  }
-
-  /**
-   * Get bot webhook info
     // - Check user eligibility
     // - Verify amount limits
     // - Check for fraud patterns
- 
-return true;
+
+    return true;
   }
 
   /**
