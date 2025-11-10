@@ -1,3 +1,11 @@
+import { config } from 'dotenv';
+import path from 'path';
+
+// Load .env from project root (two levels up from api/src/config)
+config({ path: path.resolve(__dirname, '../../../.env') });
+
+console.log('🔍 DEBUG - DATABASE_URL from env:', process.env.DATABASE_URL);
+
 export default {
   app: {
     port: parseInt(process.env.PORT || '3000', 10),
