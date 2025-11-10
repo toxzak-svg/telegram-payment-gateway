@@ -1,43 +1,57 @@
-import dotenv from 'dotenv';
-import path from 'path';
+import express, { Application, Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import v1Routes from './routes/v1.routes';
 
-// Load .env FIRST before anything else
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+const app: Application = express();
+const PORT = process.env.PORT || 3000;
 
-import PaymentGatewayServer from './server';
-import { dbConnection } from './db/connection';
-import { logger } from './utils/logger';
+// Middleware
+app.use(helmet());
+app.use(cors());
+app.use(compression());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-async function main() {
-  try {
-    // Initialize database
-    logger.info('🔄 Initializing database connection...');
-    await dbConnection.initialize();
+// Health check
+app.get('/health', (req: Request, res: Response) => {
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
-    // Run migrations
-    await dbConnection.runMigrations();
+// API routes
+app.use('/api/v1', v1Routes);
 
-    // Start API server
-    logger.info('🚀 Starting payment gateway server...');
-    const server = new PaymentGatewayServer();
-    await server.start();
+// 404 handler
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not found' });
+});
 
-    // Graceful shutdown
-    process.on('SIGTERM', async () => {
-      logger.info('SIGTERM received, shutting down gracefully');
-      await dbConnection.close();
-      process.exit(0);
-    });
+// Error handler
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
-    process.on('SIGINT', async () => {
-      logger.info('SIGINT received, shutting down gracefully');
-      await dbConnection.close();
-      process.exit(0);
-    });
-  } catch (error) {
-    logger.error('Fatal error', error);
-    process.exit(1);
-  }
-}
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Payment Gateway API running on port ${PORT}`);
+  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔗 API URL: http://localhost:${PORT}/api/v1`);
+});
 
-main();
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});

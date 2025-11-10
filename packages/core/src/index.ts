@@ -1,9 +1,6 @@
 // Export types
 export * from './types';
 
-// Export errors  
-export * from './errors';
-
 // Export config
 export * from './config';
 
