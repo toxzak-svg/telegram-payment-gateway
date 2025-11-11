@@ -10,6 +10,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import v1Routes from './routes/v1.routes';
 import { dbConnection } from './db/connection';
+import addRequestId from './middleware/requestId.middleware';
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,7 @@ app.use(cors());
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(addRequestId);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

@@ -83,20 +83,20 @@ export class UserController {
    */
   static async getMe(req: Request, res: Response) {
     const requestId = uuid();
-    const apiKey = req.headers['x-api-key'] as string;
+    const userId = (req as any).user?.id; // From auth middleware
 
     try {
-      if (!apiKey) {
+      if (!userId) {
         return res.status(401).json({
           success: false,
-          error: { code: 'UNAUTHORIZED', message: 'API key required' },
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
           requestId,
         });
       }
 
       const result = await pool.query<UserRecord>(
-        'SELECT * FROM users WHERE api_key = $1',
-        [apiKey]
+        'SELECT * FROM users WHERE id = $1',
+        [userId]
       );
 
       if (result.rows.length === 0) {
@@ -138,13 +138,13 @@ export class UserController {
    */
   static async regenerateApiKey(req: Request, res: Response) {
     const requestId = uuid();
-    const apiKey = req.headers['x-api-key'] as string;
+    const userId = (req as any).user?.id;
 
     try {
-      if (!apiKey) {
+      if (!userId) {
         return res.status(401).json({
           success: false,
-          error: { code: 'UNAUTHORIZED', message: 'API key required' },
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
           requestId,
         });
       }
@@ -154,9 +154,9 @@ export class UserController {
 
       const result = await pool.query(
         `UPDATE users SET api_key = $1, api_secret = $2, updated_at = NOW()
-         WHERE api_key = $3
+         WHERE id = $3
          RETURNING api_key, api_secret`,
-        [newApiKey, newApiSecret, apiKey]
+        [newApiKey, newApiSecret, userId]
       );
 
       if (result.rows.length === 0) {
@@ -192,29 +192,16 @@ export class UserController {
    */
   static async getStats(req: Request, res: Response) {
     const requestId = uuid();
-    const apiKey = req.headers['x-api-key'] as string;
+    const userId = (req as any).user?.id;
 
     try {
-      if (!apiKey) {
+      if (!userId) {
         return res.status(401).json({
           success: false,
-          error: { code: 'UNAUTHORIZED', message: 'API key required' },
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
           requestId,
         });
       }
-
-      // Get user
-      const userResult = await pool.query('SELECT id FROM users WHERE api_key = $1', [apiKey]);
-      
-      if (userResult.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          error: { code: 'USER_NOT_FOUND', message: 'User not found' },
-          requestId,
-        });
-      }
-
-      const userId = userResult.rows[0].id;
 
       // Get stats
       const statsResult = await pool.query(
