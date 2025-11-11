@@ -1,16 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { TelegramService } from '../../../core/src/services/telegram.service';
+import { PaymentService } from '../../../core/src/services/payment.service';
+import { pool } from '../db/connection';
+
+const paymentService = new PaymentService(pool);
 
 export class PaymentController {
-  private static telegramService: TelegramService;
-
-  /**
-   * Initialize controller with services
-   */
-  static initialize(botToken: string) {
-    this.telegramService = new TelegramService(botToken);
-  }
-
   /**
    * Handle Telegram payment webhook
    * POST /api/v1/payments/webhook
@@ -24,18 +18,25 @@ export class PaymentController {
       const payload = req.body;
 
       console.log('📥 Webhook received:', {
-        updateId: payload.update_id,
         hasPayment: !!payload.message?.successful_payment,
         hasPreCheckout: !!payload.pre_checkout_query,
       });
 
       // Process successful payment
       if (payload.message?.successful_payment) {
-        const payment = await this.telegramService.processSuccessfulPayment(payload);
+        // In production, get userId from authenticated request
+        // For now, use a test user ID
+        const userId = req.headers['x-user-id'] as string || 'test-user-id';
         
+        const payment = await paymentService.processSuccessfulPayment(
+          userId,
+          payload
+        );
+
         res.status(200).json({
           success: true,
           paymentId: payment.id,
+          starsAmount: payment.stars_amount,
           message: 'Payment processed successfully',
         });
         return;
@@ -43,8 +44,9 @@ export class PaymentController {
 
       // Process pre-checkout query
       if (payload.pre_checkout_query) {
-        const isValid = await this.telegramService.verifyPreCheckout(payload);
-        
+        const userId = req.headers['x-user-id'] as string || 'test-user-id';
+        const isValid = await paymentService.verifyPreCheckout(userId, payload);
+
         res.status(200).json({
           success: true,
           verified: isValid,
@@ -52,19 +54,22 @@ export class PaymentController {
         return;
       }
 
-      // Unknown webhook type
+      // Unknown webhook type - acknowledge but don't process
       res.status(200).json({
         success: true,
         message: 'Webhook acknowledged',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Webhook processing error:', error);
-      next(error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
     }
   }
 
   /**
-   * Get payment details by ID
+   * Get payment by ID
    * GET /api/v1/payments/:id
    */
   static async getPayment(
@@ -74,20 +79,19 @@ export class PaymentController {
   ): Promise<void> {
     try {
       const { id } = req.params;
+      const payment = await paymentService.getPaymentById(id);
 
-      // TODO: Fetch from database
-      // const payment = await PaymentModel.findById(id);
+      if (!payment) {
+        res.status(404).json({
+          success: false,
+          error: 'Payment not found',
+        });
+        return;
+      }
 
       res.status(200).json({
         success: true,
-        payment: {
-          id,
-          userId: 12345,
-          amount: 1000,
-          currency: 'XTR',
-          status: 'completed',
-          createdAt: new Date(),
-        },
+        payment,
       });
     } catch (error) {
       next(error);
@@ -104,21 +108,20 @@ export class PaymentController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { page = 1, limit = 20, status } = req.query;
+      const userId = req.headers['x-user-id'] as string || 'test-user-id';
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = (page - 1) * limit;
 
-      // TODO: Fetch from database with pagination
-      // const payments = await PaymentModel.find({ userId, status })
-      //   .limit(Number(limit))
-      //   .skip((Number(page) - 1) * Number(limit));
+      const payments = await paymentService.getUserPayments(userId, limit, offset);
 
       res.status(200).json({
         success: true,
-        data: [],
+        data: payments,
         pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total: 0,
-          pages: 0,
+          page,
+          limit,
+          total: payments.length,
         },
       });
     } catch (error) {
@@ -136,15 +139,12 @@ export class PaymentController {
     next: NextFunction
   ): Promise<void> {
     try {
-      // TODO: Aggregate from database
+      const userId = req.headers['x-user-id'] as string || 'test-user-id';
+      const stats = await paymentService.getUserStats(userId);
+
       res.status(200).json({
         success: true,
-        stats: {
-          totalPayments: 0,
-          totalAmount: 0,
-          averageAmount: 0,
-          successRate: 100,
-        },
+        stats,
       });
     } catch (error) {
       next(error);

@@ -8,7 +8,7 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-// import v1Routes from './routes/v1.routes'; // Uncomment and adjust if using v1.routes file
+import v1Routes from './routes/v1.routes';
 import { dbConnection } from './db/connection';
 
 const app: Application = express();
@@ -30,8 +30,8 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// API routes (uncomment and implement as needed)
-// app.use('/api/v1', v1Routes);
+// API routes
+app.use('/api/v1', v1Routes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

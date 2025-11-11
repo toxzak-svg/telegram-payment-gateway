@@ -3,10 +3,6 @@ import PaymentController from '../controllers/payment.controller';
 import ConversionController from '../controllers/conversion.controller';
 import { UserController } from '../controllers/user.controller';
 
-// Initialize controllers with required configuration (provide real values!)
-PaymentController.initialize(process.env.TELEGRAM_BOT_TOKEN || 'TEST_BOT_TOKEN');
-ConversionController.initialize(process.env.TON_WALLET_ADDRESS || 'TEST_TON_WALLET');
-
 const router = Router();
 
 // User endpoints (public - no auth required for registration)
@@ -17,9 +13,9 @@ router.get('/users/stats', UserController.getStats);
 
 // Payment endpoints
 router.post('/payments/webhook', PaymentController.handleTelegramWebhook);
+router.get('/payments/stats', PaymentController.getPaymentStats);
 router.get('/payments/:id', PaymentController.getPayment);
 router.get('/payments', PaymentController.listPayments);
-router.get('/payments/stats', PaymentController.getPaymentStats);
 
 // Conversion endpoints
 router.post('/conversions/estimate', ConversionController.estimateConversion);
