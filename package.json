@@ -14,6 +14,10 @@
     "dev": "npm run dev --workspaces --if-present",
     "lint": "eslint . --ext .ts --fix",
     "format": "prettier --write \"**/*.{ts,json,md}\"",
+    "migrate": "node database/migrate.js up",
+    "migrate:status": "node database/migrate.js status",
+    "migrate:reset": "node database/migrate.js reset",
+    "db:setup": "npm run migrate",
     "docker:build": "docker build -t tg-payment-gateway .",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
@@ -37,6 +41,7 @@
     "@ton/crypto": "^3.3.0",
     "@ton/ton": "^16.0.0",
     "dotenv": "^17.2.3",
+    "pg": "^8.11.3",
     "pg-promise": "^12.2.0",
     "tonweb": "^0.0.66"
   }
