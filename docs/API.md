@@ -1,103 +1,93 @@
 # API Reference
 
-Complete API documentation for the Telegram Payment Gateway.
+Complete reference for the Telegram Payment Gateway REST API.
 
 ## Base URL
 
-http://localhost:3000/api/v1
+Production: https://api.yourgateway.com/v1
+Development: http://localhost:3000/api/v1
 
 text
 
 ## Authentication
 
-All authenticated endpoints require an API key in one of these formats:
+All endpoints (except registration and webhooks) require authentication via API key.
 
-### Header (Recommended)
-X-API-Key: pk_your_api_key_here
+### Authentication Methods
 
-text
-
-### Bearer Token
-Authorization: Bearer pk_your_api_key_here
+**Method 1: Header (Recommended)**
+X-API-Key: pk_your_api_key
 
 text
 
-### Query Parameter
-?api_key=pk_your_api_key_here
+**Method 2: Bearer Token**
+Authorization: Bearer pk_your_api_key
+
+text
+
+**Method 3: Query Parameter**
+GET /api/v1/payments?api_key=pk_your_api_key
 
 text
 
 ---
 
-## Users
+## User Endpoints
 
-### Register User
+### Register New User
 
 Create a new user account and receive API credentials.
 
-**Endpoint:** `POST /users/register`
-
-**Auth Required:** No
-
-**Rate Limit:** 10 requests/minute
+**Endpoint:** `POST /api/v1/users/register`  
+**Authentication:** None required
 
 **Request Body:**
 {
-"appName": "My App",
-"description": "Optional app description",
-"webhookUrl": "https://yourapp.com/webhook"
+"appName": "My Telegram Bot",
+"description": "Bot description (optional)",
+"webhookUrl": "https://myapp.com/webhook"
 }
 
 text
 
-**Success Response (201):**
+**Response:** `201 Created`
 {
 "success": true,
 "user": {
-"id": "uuid",
-"appName": "My App",
-"apiKey": "pk_...",
-"apiSecret": "sk_...",
-"webhookUrl": "https://yourapp.com/webhook",
+"id": "uuid-v4",
+"appName": "My Telegram Bot",
+"apiKey": "pk_abc123...",
+"apiSecret": "sk_xyz789...",
 "kycStatus": "pending",
-"createdAt": "2025-11-11T10:00:00.000Z"
-},
-"requestId": "uuid",
-"timestamp": "2025-11-11T10:00:00.000Z"
+"createdAt": "2025-11-12T18:00:00Z"
+}
 }
 
 text
 
-**Error Responses:**
-- `400` - Missing app name
-- `429` - Rate limit exceeded
-- `500` - Server error
+**Rate Limit:** 10 requests/minute per IP
 
 ---
 
 ### Get User Profile
 
-Retrieve current user information.
+Retrieve authenticated user's profile information.
 
-**Endpoint:** `GET /users/me`
+**Endpoint:** `GET /api/v1/users/me`  
+**Authentication:** Required
 
-**Auth Required:** Yes
-
-**Rate Limit:** 60 requests/minute
-
-**Success Response (200):**
+**Response:** `200 OK`
 {
 "success": true,
 "user": {
-"id": "uuid",
-"appName": "My App",
-"apiKey": "pk_...",
-"webhookUrl": "https://yourapp.com/webhook",
+"id": "uuid-v4",
+"appName": "My Telegram Bot",
+"apiKey": "pk_***",
+"webhookUrl": "https://myapp.com/webhook",
 "kycStatus": "pending",
-"isActive": true,
-"createdAt": "2025-11-11T10:00:00.000Z"
-},
-"requestId": "uuid"
+"createdAt": "2025-11-12T18:00:00Z",
+"updatedAt": "2025-11-12T18:30:00Z"
+}
 }
 
 text
@@ -106,124 +96,87 @@ text
 
 ### Regenerate API Keys
 
-Generate new API key and secret.
+Generate new API credentials. Old keys are immediately invalidated.
 
-**Endpoint:** `POST /users/api-keys/regenerate`
+**Endpoint:** `POST /api/v1/users/api-keys/regenerate`  
+**Authentication:** Required
 
-**Auth Required:** Yes
-
-**Rate Limit:** 10 requests/minute
-
-**Success Response (200):**
+**Response:** `200 OK`
 {
 "success": true,
-"data": {
-"apiKey": "pk_new_key",
-"apiSecret": "sk_new_secret",
+"apiKey": "pk_new123...",
+"apiSecret": "sk_new789...",
 "message": "API keys regenerated successfully"
-},
-"requestId": "uuid"
 }
 
 text
 
----
-
-### Get User Statistics
-
-Retrieve payment statistics for authenticated user.
-
-**Endpoint:** `GET /users/stats`
-
-**Auth Required:** Yes
-
-**Rate Limit:** 60 requests/minute
-
-**Success Response (200):**
-{
-"success": true,
-"stats": {
-"totalPayments": 42,
-"totalStars": 25000,
-"successfulPayments": 40
-},
-"requestId": "uuid"
-}
-
-text
+**⚠️ Warning:** Old keys stop working immediately.
 
 ---
 
-## Payments
+## Payment Endpoints
 
 ### Telegram Webhook
 
-Receive payment notifications from Telegram.
+Receive payment notifications from Telegram Bot API.
 
-**Endpoint:** `POST /payments/webhook`
-
-**Auth Required:** No (uses X-User-Id header)
-
-**Rate Limit:** 100 requests/minute
-
-**Headers:**
-X-User-Id: user_uuid
-
-text
+**Endpoint:** `POST /api/v1/payments/webhook`  
+**Authentication:** Header `X-User-Id: uuid-v4`
 
 **Request Body:**
 {
 "update_id": 123456789,
 "message": {
-"from": {
-"id": 987654321,
-"username": "testuser"
-},
 "successful_payment": {
-"telegram_payment_charge_id": "tg_charge_xxx",
-"provider_payment_charge_id": "provider_xxx",
+"currency": "XTR",
 "total_amount": 1000,
-"currency": "XTR"
+"invoice_payload": "user_defined_payload",
+"telegram_payment_charge_id": "tg_charge_123",
+"provider_payment_charge_id": "provider_123"
 }
 }
 }
 
 text
 
-**Success Response (200):**
-{
-"success": true,
-"paymentId": "uuid",
-"starsAmount": 1000,
-"message": "Payment processed successfully"
-}
-
-text
-
----
-
-### Get Payment
-
-Retrieve payment details by ID.
-
-**Endpoint:** `GET /payments/:id`
-
-**Auth Required:** Yes
-
-**Rate Limit:** 60 requests/minute
-
-**Success Response (200):**
+**Response:** `200 OK`
 {
 "success": true,
 "payment": {
-"id": "uuid",
-"user_id": "uuid",
-"telegram_payment_id": "tg_charge_xxx",
-"user_telegram_id": 987654321,
-"user_telegram_username": "testuser",
-"stars_amount": 1000,
+"id": "payment-uuid",
+"starsAmount": 1000,
 "status": "received",
-"created_at": "2025-11-11T10:00:00.000Z"
+"telegramPaymentId": "tg_charge_123",
+"createdAt": "2025-11-12T18:00:00Z"
+}
+}
+
+text
+
+**Rate Limit:** 100 requests/minute
+
+---
+
+### Get Payment Details
+
+Retrieve details for a specific payment.
+
+**Endpoint:** `GET /api/v1/payments/:id`  
+**Authentication:** Required
+
+**Response:** `200 OK`
+{
+"success": true,
+"payment": {
+"id": "payment-uuid",
+"userId": "user-uuid",
+"telegramInvoiceId": "inv_123",
+"starsAmount": 1000,
+"status": "received",
+"telegramPaymentId": "tg_charge_123",
+"createdAt": "2025-11-12T18:00:00Z",
+"updatedAt": "2025-11-12T18:00:00Z"
 }
 }
 
@@ -233,33 +186,37 @@ text
 
 ### List Payments
 
-Get paginated list of payments.
+List all payments with pagination and filtering.
 
-**Endpoint:** `GET /payments?page=1&limit=20`
-
-**Auth Required:** Yes
-
-**Rate Limit:** 60 requests/minute
+**Endpoint:** `GET /api/v1/payments`  
+**Authentication:** Required
 
 **Query Parameters:**
-- `page` (optional, default: 1)
-- `limit` (optional, default: 20, max: 100)
+- `page` (integer, default: 1) - Page number
+- `limit` (integer, default: 20, max: 100) - Results per page
+- `status` (string, optional) - Filter by status: `pending`, `received`, `converting`, `converted`, `settled`, `failed`
 
-**Success Response (200):**
+**Example:**
+GET /api/v1/payments?page=1&limit=20&status=received
+
+text
+
+**Response:** `200 OK`
 {
 "success": true,
-"data": [
+"payments": [
 {
-"id": "uuid",
-"stars_amount": 1000,
+"id": "payment-uuid-1",
+"starsAmount": 1000,
 "status": "received",
-"created_at": "2025-11-11T10:00:00.000Z"
+"createdAt": "2025-11-12T18:00:00Z"
 }
 ],
 "pagination": {
 "page": 1,
 "limit": 20,
-"total": 5
+"total": 150,
+"pages": 8
 }
 }
 
@@ -269,21 +226,25 @@ text
 
 ### Get Payment Statistics
 
-Get payment statistics for authenticated user.
+Get aggregated statistics for user's payments.
 
-**Endpoint:** `GET /payments/stats`
+**Endpoint:** `GET /api/v1/payments/stats`  
+**Authentication:** Required
 
-**Auth Required:** Yes
-
-**Rate Limit:** 60 requests/minute
-
-**Success Response (200):**
+**Response:** `200 OK`
 {
 "success": true,
 "stats": {
-"totalPayments": 42,
-"totalStars": 25000,
-"successfulPayments": 40
+"totalPayments": 150,
+"totalStars": 750000,
+"byStatus": {
+"pending": 5,
+"received": 120,
+"converting": 10,
+"converted": 10,
+"settled": 5,
+"failed": 0
+}
 }
 }
 
@@ -291,17 +252,14 @@ text
 
 ---
 
-## Conversions
+## Conversion Endpoints
 
-### Get Conversion Estimate
+### Estimate Conversion
 
-Get a quote for converting Stars to another currency.
+Get an estimated conversion rate without locking.
 
-**Endpoint:** `POST /conversions/estimate`
-
-**Auth Required:** Yes
-
-**Rate Limit:** 60 requests/minute
+**Endpoint:** `POST /api/v1/conversions/estimate`  
+**Authentication:** Required
 
 **Request Body:**
 {
@@ -312,23 +270,23 @@ Get a quote for converting Stars to another currency.
 
 text
 
-**Success Response (200):**
+**Response:** `200 OK`
 {
 "success": true,
-"quote": {
+"estimate": {
+"sourceAmount": 1000,
 "sourceCurrency": "STARS",
 "targetCurrency": "TON",
-"sourceAmount": 1000,
-"targetAmount": 0.98,
-"exchangeRate": 0.001,
+"estimatedAmount": 0.99,
+"exchangeRate": 0.00099,
 "fees": {
+"telegram": 10,
 "fragment": 5,
-"network": 1,
-"platform": 10,
-"total": 16
+"network": 2,
+"total": 17
 },
-"estimatedArrival": "5-10 minutes",
-"validUntil": "2025-11-11T10:05:00.000Z"
+"netAmount": 0.983,
+"validUntil": 1699564800000
 }
 }
 
@@ -340,11 +298,8 @@ text
 
 Lock an exchange rate for a specified duration.
 
-**Endpoint:** `POST /conversions/lock-rate`
-
-**Auth Required:** Yes
-
-**Rate Limit:** 10 requests/minute
+**Endpoint:** `POST /api/v1/conversions/lock-rate`  
+**Authentication:** Required
 
 **Request Body:**
 {
@@ -356,131 +311,142 @@ Lock an exchange rate for a specified duration.
 
 text
 
-**Success Response (200):**
+**Response:** `200 OK`
 {
 "success": true,
-"data": {
-"conversionId": "uuid",
-"rate": 0.001,
-"lockedUntil": "2025-11-11T10:05:00.000Z",
-"targetAmount": 0.98
+"rateLock": {
+"id": "lock-uuid",
+"exchangeRate": 0.00099,
+"lockedUntil": 1699565100000,
+"sourceAmount": 1000,
+"targetCurrency": "TON"
 }
 }
 
 text
+
+**Notes:**
+- Minimum lock duration: 60 seconds
+- Maximum lock duration: 600 seconds (10 minutes)
+- Rate locks cannot be extended
 
 ---
 
 ### Create Conversion
 
-Execute a conversion from Stars to another currency.
+Create a new conversion from Stars to target currency.
 
-**Endpoint:** `POST /conversions/create`
-
-**Auth Required:** Yes
-
-**Rate Limit:** 10 requests/minute
+**Endpoint:** `POST /api/v1/conversions/create`  
+**Authentication:** Required
 
 **Request Body:**
 {
-"paymentIds": ["uuid1", "uuid2"],
-"targetCurrency": "TON"
+"paymentIds": ["payment-uuid-1", "payment-uuid-2"],
+"targetCurrency": "TON",
+"rateLockId": "lock-uuid"
 }
 
 text
 
-**Success Response (201):**
+**Response:** `201 Created`
 {
 "success": true,
 "conversion": {
-"id": "uuid",
-"sourceAmount": 2000,
-"targetAmount": 1.96,
-"exchangeRate": 0.001,
+"id": "conversion-uuid",
+"paymentIds": ["payment-uuid-1", "payment-uuid-2"],
+"sourceCurrency": "STARS",
+"targetCurrency": "TON",
+"sourceAmount": 5000,
+"targetAmount": 4.95,
+"exchangeRate": 0.00099,
 "status": "pending",
-"createdAt": "2025-11-11T10:00:00.000Z"
+"fees": {
+"telegram": 50,
+"fragment": 25,
+"total": 75
+},
+"createdAt": "2025-11-12T18:00:00Z"
 }
 }
 
 text
 
-**Error Responses:**
-- `400` - Invalid payment IDs or insufficient amount (minimum 1000 Stars)
-- `404` - Payments not found
-- `500` - Conversion failed
+**Requirements:**
+- Minimum 1000 Stars per conversion
+- All payments must be in `received` status
+- Rate lock (if provided) must be valid
 
 ---
 
 ### Get Conversion Status
 
-Check the status of a conversion.
+Check the status of an ongoing conversion.
 
-**Endpoint:** `GET /conversions/:id/status`
+**Endpoint:** `GET /api/v1/conversions/:id/status`  
+**Authentication:** Required
 
-**Auth Required:** Yes
-
-**Rate Limit:** 60 requests/minute
-
-**Success Response (200):**
+**Response:** `200 OK`
 {
 "success": true,
+"status": {
 "conversion": {
-"id": "uuid",
-"status": "completed",
-"sourceAmount": 2000,
-"targetAmount": 1.96,
-"exchangeRate": 0.001,
-"fragmentTxId": "frag_xxx",
-"tonTxHash": "ton_hash_xxx",
-"createdAt": "2025-11-11T10:00:00.000Z",
-"completedAt": "2025-11-11T10:05:00.000Z"
+"id": "conversion-uuid",
+"status": "phase2_committed",
+"sourceAmount": 5000,
+"targetAmount": 4.95,
+"fragmentTxId": "frag_tx_123",
+"tonTxHash": "ton_hash_456"
+},
+"progress": {
+"phase": "phase2_committed",
+"percentage": 66,
+"estimatedCompletion": 1699565400000
+}
 }
 }
 
 text
 
-**Conversion Statuses:**
-- `pending` - Conversion initiated
-- `rate_locked` - Rate locked, awaiting execution
-- `phase1_prepared` - Preparing Fragment transaction
-- `phase2_committed` - Committed to Fragment
-- `phase3_confirmed` - Confirmed on blockchain
-- `completed` - Successfully completed
+**Status Values:**
+- `pending` - Conversion created
+- `rate_locked` - Rate locked
+- `phase1_prepared` - Payments verified
+- `phase2_committed` - Submitted to Fragment
+- `phase3_confirmed` - TON received
+- `completed` - Conversion complete
 - `failed` - Conversion failed
-- `rolled_back` - Transaction rolled back
 
 ---
 
 ### List Conversions
 
-Get paginated list of conversions.
+List all conversions with pagination and filtering.
 
-**Endpoint:** `GET /conversions?page=1&limit=20`
-
-**Auth Required:** Yes
-
-**Rate Limit:** 60 requests/minute
+**Endpoint:** `GET /api/v1/conversions`  
+**Authentication:** Required
 
 **Query Parameters:**
-- `page` (optional, default: 1)
-- `limit` (optional, default: 20, max: 100)
+- `page` (integer, default: 1)
+- `limit` (integer, default: 20, max: 100)
+- `status` (string, optional)
 
-**Success Response (200):**
+**Response:** `200 OK`
 {
 "success": true,
-"data": [
+"conversions": [
 {
-"id": "uuid",
-"source_amount": 2000,
-"target_amount": 1.96,
+"id": "conversion-uuid",
+"sourceAmount": 5000,
+"targetAmount": 4.95,
 "status": "completed",
-"created_at": "2025-11-11T10:00:00.000Z"
+"createdAt": "2025-11-12T18:00:00Z"
 }
 ],
 "pagination": {
 "page": 1,
 "limit": 20,
-"total": 3
+"total": 50,
+"pages": 3
 }
 }
 
@@ -488,85 +454,132 @@ text
 
 ---
 
-## Rate Limiting
+## Rate Limits
 
-All endpoints have rate limits to prevent abuse:
-
-| Endpoint Type | Limit |
-|--------------|-------|
-| Registration | 10 requests/minute |
-| Standard API | 60 requests/minute |
-| Webhooks | 100 requests/minute |
-| Conversions | 10 requests/minute |
+| Endpoint Type | Rate Limit |
+|--------------|------------|
+| User Registration | 10 req/min per IP |
+| Standard API | 60 req/min per user |
+| Webhooks | 100 req/min per user |
 
 **Rate Limit Headers:**
 X-RateLimit-Limit: 60
-X-RateLimit-Remaining: 59
-X-RateLimit-Reset: 2025-11-11T10:01:00.000Z
-
-text
-
-**Rate Limit Error (429):**
-{
-"success": false,
-"error": {
-"code": "RATE_LIMIT_EXCEEDED",
-"message": "Too many requests, please try again later",
-"retryAfter": 45
-}
-}
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1699565400
 
 text
 
 ---
 
-## Error Codes
+## Error Responses
 
-| Code | Description |
-|------|-------------|
-| `MISSING_API_KEY` | No API key provided |
-| `INVALID_API_KEY` | API key is invalid |
-| `INVALID_API_KEY_FORMAT` | API key format is incorrect |
-| `ACCOUNT_INACTIVE` | User account is deactivated |
-| `RATE_LIMIT_EXCEEDED` | Too many requests |
-| `MISSING_APP_NAME` | App name is required |
-| `USER_NOT_FOUND` | User does not exist |
-| `INVALID_AMOUNT` | Invalid amount provided |
-| `INVALID_PAYMENTS` | Payment IDs invalid or empty |
-| `CONVERSION_FAILED` | Conversion could not be processed |
-| `SERVER_ERROR` | Internal server error |
+All errors follow this format:
 
----
-
-## Response Format
-
-All API responses follow this structure:
-
-**Success:**
-{
-"success": true,
-"data": {},
-"requestId": "uuid",
-"timestamp": "2025-11-11T10:00:00.000Z"
-}
-
-text
-
-**Error:**
 {
 "success": false,
 "error": {
 "code": "ERROR_CODE",
-"message": "Human-readable error message"
-},
-"requestId": "uuid",
-"timestamp": "2025-11-11T10:00:00.000Z"
+"message": "Human-readable error message",
+"details": {}
 }
+}
+
+text
+
+### Common Error Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `UNAUTHORIZED` | 401 | Invalid or missing API key |
+| `FORBIDDEN` | 403 | Insufficient permissions |
+| `NOT_FOUND` | 404 | Resource not found |
+| `VALIDATION_ERROR` | 400 | Invalid request data |
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
+| `MINIMUM_AMOUNT_NOT_MET` | 400 | Below 1000 Stars minimum |
+| `INSUFFICIENT_BALANCE` | 400 | Not enough funds |
+| `RATE_LOCK_EXPIRED` | 400 | Rate lock no longer valid |
+| `CONVERSION_IN_PROGRESS` | 409 | Conversion already processing |
+| `INTERNAL_ERROR` | 500 | Server error |
+
+---
+
+## Webhooks
+
+Configure webhook URL in your user profile to receive real-time events.
+
+### Webhook Events
+
+**Payment Received:**
+{
+"event": "payment.received",
+"timestamp": 1699564800000,
+"data": {
+"paymentId": "payment-uuid",
+"starsAmount": 1000
+}
+}
+
+text
+
+**Conversion Completed:**
+{
+"event": "conversion.completed",
+"timestamp": 1699564800000,
+"data": {
+"conversionId": "conversion-uuid",
+"tonAmount": 4.95,
+"txHash": "ton_hash_456"
+}
+}
+
+text
+
+### Webhook Signature Verification
+
+const crypto = require('crypto');
+
+function verifyWebhook(payload, signature, secret) {
+const hmac = crypto.createHmac('sha256', secret);
+const digest = hmac.update(payload).digest('hex');
+return signature === digest;
+}
+
+// Express middleware
+app.post('/webhook', (req, res) => {
+const signature = req.headers['x-webhook-signature'];
+const payload = JSON.stringify(req.body);
+
+if (!verifyWebhook(payload, signature, WEBHOOK_SECRET)) {
+return res.status(401).json({ error: 'Invalid signature' });
+}
+
+// Process webhook...
+});
 
 text
 
 ---
 
-## Request Tracking
+## SDK Usage
 
-Every response includes an `X-Request-Id` header for debugging and support purposes. Include this ID when reporting issues.
+For TypeScript/JavaScript projects, use the official SDK:
+
+npm install @tg-payment/sdk
+
+text
+undefined
+import TelegramPaymentGateway from '@tg-payment/sdk';
+
+const gateway = new TelegramPaymentGateway({
+apiKey: 'pk_your_key',
+apiSecret: 'sk_your_secret',
+});
+
+const estimate = await gateway.estimateConversion({
+starsAmount: 5000,
+targetCurrency: 'TON',
+});
+
+text
+
+See [SDK Documentation](../packages/sdk/README.md) for complete reference.
