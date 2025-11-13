@@ -3,6 +3,7 @@ import PaymentController from '../controllers/payment.controller';
 import ConversionController from '../controllers/conversion.controller';
 import { UserController } from '../controllers/user.controller';
 import AdminController from '../controllers/admin.controller';
+import FeeCollectionController from '../controllers/fee-collection.controller';
 import authenticateApiKey, { optionalAuth } from '../middleware/auth.middleware';
 import { createRateLimiter } from '../middleware/ratelimit.middleware';
 
@@ -31,6 +32,12 @@ router.post('/conversions/create', authenticateApiKey, strictLimit, ConversionCo
 router.post('/conversions/lock-rate', authenticateApiKey, strictLimit, ConversionController.lockRate);
 router.get('/conversions/:id/status', authenticateApiKey, standardLimit, ConversionController.getStatus);
 router.get('/conversions', authenticateApiKey, standardLimit, ConversionController.listConversions);
+
+// Fee Collection endpoints (NEW!)
+router.get('/fees/uncollected', authenticateApiKey, standardLimit, FeeCollectionController.getUncollected);
+router.post('/fees/collect', authenticateApiKey, strictLimit, FeeCollectionController.requestCollection);
+router.get('/fees/collections', authenticateApiKey, standardLimit, FeeCollectionController.getHistory);
+router.post('/fees/collections/:id/complete', authenticateApiKey, strictLimit, FeeCollectionController.markCompleted);
 
 // Admin endpoints
 router.get('/admin/revenue', standardLimit, AdminController.getRevenue);
