@@ -9,9 +9,10 @@
 // ============================================
 // SERVICES (Updated - No Fragment)
 // ============================================
-export { TelegramService } from './services/telegram.service';
+export { TelegramService } from './services/Telegram.service';
 export { DirectConversionService } from './services/direct-conversion.service';
 export { TonPaymentService } from './services/ton-payment.service';
+export { TonBlockchainService } from './services/ton-blockchain.service';
 export { FeeService } from './services/fee.service';
 export { FeeCollectionService } from './services/fee-collection.service';
 export { RateAggregatorService } from './services/rate.aggregator';

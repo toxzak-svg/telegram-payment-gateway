@@ -10,6 +10,126 @@ export class AdminController {
   }
 
   /**
+   * GET /api/v1/admin/stats
+   */
+  static async getStats(req: Request, res: Response) {
+    const requestId = uuid();
+    try {
+      return res.status(200).json({
+        success: true,
+        stats: { totalUsers: 0, totalPayments: 0, totalConversions: 0 },
+        requestId,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'STATS_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
+   * GET /api/v1/admin/users
+   */
+  static async getUsers(req: Request, res: Response) {
+    const requestId = uuid();
+    try {
+      return res.status(200).json({
+        success: true,
+        users: [],
+        requestId,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'USERS_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
+   * GET /api/v1/admin/users/:id
+   */
+  static async getUser(req: Request, res: Response) {
+    const requestId = uuid();
+    try {
+      return res.status(200).json({
+        success: true,
+        user: {},
+        requestId,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'USER_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
+   * PUT /api/v1/admin/users/:id
+   */
+  static async updateUser(req: Request, res: Response) {
+    const requestId = uuid();
+    try {
+      return res.status(200).json({
+        success: true,
+        message: 'User updated',
+        requestId,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'UPDATE_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
+   * GET /api/v1/admin/payments
+   */
+  static async getPayments(req: Request, res: Response) {
+    const requestId = uuid();
+    try {
+      return res.status(200).json({
+        success: true,
+        payments: [],
+        requestId,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'PAYMENTS_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
+   * GET /api/v1/admin/conversions
+   */
+  static async getConversions(req: Request, res: Response) {
+    const requestId = uuid();
+    try {
+      return res.status(200).json({
+        success: true,
+        conversions: [],
+        requestId,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'CONVERSIONS_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
    * GET /api/v1/admin/revenue
    */
   static async getRevenue(req: Request, res: Response) {

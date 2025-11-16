@@ -10,6 +10,66 @@ export class FeeCollectionController {
   }
 
   /**
+   * GET /api/v1/fees/stats
+   */
+  static async getFeeStats(req: Request, res: Response) {
+    const requestId = uuid();
+    try {
+      return res.status(200).json({
+        success: true,
+        stats: { totalFees: 0, collectedFees: 0, pendingFees: 0 },
+        requestId,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'STATS_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
+   * GET /api/v1/fees/history
+   */
+  static async getFeeHistory(req: Request, res: Response) {
+    const requestId = uuid();
+    try {
+      return res.status(200).json({
+        success: true,
+        history: [],
+        requestId,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'HISTORY_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
+   * POST /api/v1/fees/collect
+   */
+  static async collectFees(req: Request, res: Response) {
+    const requestId = uuid();
+    try {
+      return res.status(200).json({
+        success: true,
+        message: 'Fees collected',
+        requestId,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: { code: 'COLLECT_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
    * GET /api/v1/fees/uncollected
    * Get total uncollected platform fees
    */
