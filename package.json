@@ -22,6 +22,7 @@
     "docker:logs": "docker-compose logs -f"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/pg-promise": "^0.0.28",
