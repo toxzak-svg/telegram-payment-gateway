@@ -101,4 +101,4 @@ async function optionalAuth(
 }
 
 export default authenticateApiKey;
-export { optionalAuth };
+export { optionalAuth, authenticateApiKey as authenticate };

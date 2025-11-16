@@ -15,34 +15,29 @@ export class ConversionController {
   private conversionService: DirectConversionService;
 
   constructor() {
-    this.conversionService = new DirectConversionService();
+    // In production, inject these dependencies; for now use placeholder
+    const dummyPool = {} as any;
+    const dummyTonService = {} as any;
+    this.conversionService = new DirectConversionService(dummyPool, dummyTonService);
   }
 
   /**
-   * Get current conversion rate
+   * Get conversion rate quote
    * GET /api/v1/conversions/rate
    */
   async getRate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { fromCurrency, toCurrency, amount } = req.query;
+      const { amount = 100, sourceCurrency = 'STARS', targetCurrency = 'TON' } = req.query;
 
-      if (!fromCurrency || !toCurrency) {
-        res.status(400).json({
-          success: false,
-          error: 'fromCurrency and toCurrency are required'
-        });
-        return;
-      }
-
-      const rate = await this.conversionService.getCurrentRate(
-        fromCurrency as string,
-        toCurrency as string,
-        amount ? parseFloat(amount as string) : undefined
+      const quote = await this.conversionService.getQuote(
+        parseFloat(amount as string),
+        sourceCurrency as string,
+        targetCurrency as string
       );
 
       res.json({
         success: true,
-        data: rate
+        data: quote
       });
     } catch (error) {
       next(error);
@@ -50,22 +45,23 @@ export class ConversionController {
   }
 
   /**
-   * Create a new conversion request
+   * Create a new conversion request (locks rate)
    * POST /api/v1/conversions
    */
   async createConversion(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { fromCurrency, toCurrency, amount, slippageTolerance } = req.body;
+      const { amount, sourceCurrency = 'STARS', targetCurrency = 'TON', durationSeconds = 300 } = req.body;
 
-      if (!fromCurrency || !toCurrency || !amount) {
+      if (!amount) {
         res.status(400).json({
           success: false,
-          error: 'fromCurrency, toCurrency, and amount are required'
+          error: 'amount is required'
         });
         return;
       }
 
-      if (!req.user) {
+      const userId = req.headers['x-user-id'] as string;
+      if (!userId) {
         res.status(401).json({
           success: false,
           error: 'Authentication required'
@@ -73,13 +69,13 @@ export class ConversionController {
         return;
       }
 
-      const conversion = await this.conversionService.initiateConversion({
-        userId: req.user.id,
-        fromCurrency,
-        toCurrency,
-        amount: parseFloat(amount),
-        slippageTolerance: slippageTolerance || 0.01
-      });
+      const conversion = await this.conversionService.lockRate(
+        userId,
+        parseFloat(amount),
+        sourceCurrency,
+        targetCurrency,
+        durationSeconds
+      );
 
       res.status(201).json({
         success: true,
@@ -98,20 +94,9 @@ export class ConversionController {
     try {
       const { id } = req.params;
 
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          error: 'Authentication required'
-        });
-        return;
-      }
+      const conversion = await this.conversionService.getConversionById(id);
 
-      const result = await db.query(
-        'SELECT * FROM conversions WHERE id = $1 AND user_id = $2',
-        [id, req.user.id]
-      );
-
-      if (result.rows.length === 0) {
+      if (!conversion) {
         res.status(404).json({
           success: false,
           error: 'Conversion not found'
@@ -121,7 +106,7 @@ export class ConversionController {
 
       res.json({
         success: true,
-        data: result.rows[0]
+        data: conversion
       });
     } catch (error) {
       next(error);
@@ -136,7 +121,8 @@ export class ConversionController {
     try {
       const { page = 1, limit = 20, status } = req.query;
 
-      if (!req.user) {
+      const userId = req.headers['x-user-id'] as string;
+      if (!userId) {
         res.status(401).json({
           success: false,
           error: 'Authentication required'
@@ -144,37 +130,26 @@ export class ConversionController {
         return;
       }
 
+      const conversions = await this.conversionService.getUserConversions(userId);
+
+      // Filter by status if provided
+      const filtered = status 
+        ? conversions.filter(c => c.status === status)
+        : conversions;
+
+      // Simple pagination
       const offset = (Number(page) - 1) * Number(limit);
-
-      let query = 'SELECT * FROM conversions WHERE user_id = $1';
-      const params: any[] = [req.user.id];
-
-      if (status) {
-        query += ' AND status = $2';
-        params.push(status);
-      }
-
-      query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
-      params.push(Number(limit), offset);
-
-      const result = await db.query(query, params);
-
-      const countQuery = status
-        ? 'SELECT COUNT(*) FROM conversions WHERE user_id = $1 AND status = $2'
-        : 'SELECT COUNT(*) FROM conversions WHERE user_id = $1';
-      
-      const countParams = status ? [req.user.id, status] : [req.user.id];
-      const countResult = await db.query(countQuery, countParams);
+      const paginated = filtered.slice(offset, offset + Number(limit));
 
       res.json({
         success: true,
         data: {
-          conversions: result.rows,
+          conversions: paginated,
           pagination: {
             page: Number(page),
             limit: Number(limit),
-            total: parseInt(countResult.rows[0].count),
-            totalPages: Math.ceil(parseInt(countResult.rows[0].count) / Number(limit))
+            total: filtered.length,
+            totalPages: Math.ceil(filtered.length / Number(limit))
           }
         }
       });
@@ -183,59 +158,7 @@ export class ConversionController {
     }
   }
 
-  /**
-   * Execute a pending conversion
-   * POST /api/v1/conversions/:id/execute
-   */
-  async executeConversion(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { id } = req.params;
 
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          error: 'Authentication required'
-        });
-        return;
-      }
-
-      const result = await this.conversionService.executeConversion(id, req.user.id);
-
-      res.json({
-        success: true,
-        data: result
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * Cancel a pending conversion
-   * POST /api/v1/conversions/:id/cancel
-   */
-  async cancelConversion(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { id } = req.params;
-
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          error: 'Authentication required'
-        });
-        return;
-      }
-
-      const result = await this.conversionService.cancelConversion(id, req.user.id);
-
-      res.json({
-        success: true,
-        data: result
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
 }
 
 // Export instance methods
@@ -245,5 +168,3 @@ export const getRate = controller.getRate.bind(controller);
 export const createConversion = controller.createConversion.bind(controller);
 export const getConversion = controller.getConversion.bind(controller);
 export const getConversionHistory = controller.getConversionHistory.bind(controller);
-export const executeConversion = controller.executeConversion.bind(controller);
-export const cancelConversion = controller.cancelConversion.bind(controller);

@@ -1,11 +1,10 @@
 import { Router } from 'express';
-// import * as paymentController from '../controllers/payment.controller';
-// import * as conversionController from '../controllers/conversion.controller';
-// import * as userController from '../controllers/user.controller';
-// import * as adminController from '../controllers/admin.controller';
-// import * as feeCollectionController from '../controllers/fee-collection.controller';
+import PaymentController from '../controllers/payment.controller';
+import * as conversionController from '../controllers/conversion.controller';
+import UserController from '../controllers/user.controller';
+import AdminController from '../controllers/admin.controller';
+import FeeCollectionController from '../controllers/fee-collection.controller';
 import { authenticate } from '../middleware/auth.middleware';
-// import { requireAdmin } from '../middleware/admin.middleware';
 
 const router = Router();
 
@@ -14,19 +13,39 @@ router.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Payment routes (commented for now)
-// router.post('/payments', authenticate, paymentController.createPayment);
-// router.get('/payments/:id', authenticate, paymentController.getPayment);
-// router.get('/payments', authenticate, paymentController.getPaymentHistory);
-// router.post('/payments/:id/cancel', authenticate, paymentController.cancelPayment);
+// Payment routes
+router.post('/payments/webhook', PaymentController.handleTelegramWebhook);
+router.get('/payments/:id', authenticate, PaymentController.getPayment);
+router.get('/payments', authenticate, PaymentController.listPayments);
+router.get('/payments/stats', authenticate, PaymentController.getPaymentStats);
 
-// Conversion routes (commented for now)
-// router.get('/conversions/rate', conversionController.getRate);
-// router.post('/conversions', authenticate, conversionController.createConversion);
-// router.get('/conversions/:id', authenticate, conversionController.getConversion);
-// router.get('/conversions', authenticate, conversionController.getConversionHistory);
-// router.post('/conversions/:id/execute', authenticate, conversionController.executeConversion);
-// router.post('/conversions/:id/cancel', authenticate, conversionController.cancelConversion);
+// Conversion routes
+router.get('/conversions/rate', conversionController.getRate);
+router.post('/conversions', authenticate, conversionController.createConversion);
+router.get('/conversions/:id', authenticate, conversionController.getConversion);
+router.get('/conversions', authenticate, conversionController.getConversionHistory);
+
+// User routes
+router.post('/users/register', UserController.register);
+router.get('/users/me', authenticate, UserController.getMe);
+router.post('/users/api-keys/regenerate', authenticate, UserController.regenerateApiKey);
+router.get('/users/stats', authenticate, UserController.getStats);
+
+// Admin routes
+router.get('/admin/stats', authenticate, AdminController.getStats);
+router.get('/admin/users', authenticate, AdminController.getUsers);
+router.get('/admin/revenue', authenticate, AdminController.getRevenue);
+router.get('/admin/revenue/summary', authenticate, AdminController.getRevenueSummary);
+router.get('/admin/config', authenticate, AdminController.getConfig);
+router.put('/admin/config', authenticate, AdminController.updateConfig);
+
+// Fee collection routes
+router.get('/fees/stats', authenticate, FeeCollectionController.getFeeStats);
+router.get('/fees/history', authenticate, FeeCollectionController.getFeeHistory);
+router.post('/fees/collect', authenticate, FeeCollectionController.collectFees);
+router.get('/fees/uncollected', authenticate, FeeCollectionController.getUncollected);
+router.post('/fees/collections/:id/complete', authenticate, FeeCollectionController.markCompleted);
+router.get('/fees/collections', authenticate, FeeCollectionController.getHistory);
 
 // Temporary: Simple health check only
 router.get('/health', (req, res) => {
