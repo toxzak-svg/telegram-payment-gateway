@@ -1,4 +1,7 @@
+
 import { DollarSign, TrendingUp, Users, Activity } from 'lucide-react';
+import AnalyticsCharts from '../components/analytics/AnalyticsCharts';
+import RecentTransactionsTable from '../components/analytics/RecentTransactionsTable';
 
 export default function Dashboard() {
   const stats = [
@@ -11,7 +14,6 @@ export default function Dashboard() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat) => (
           <div key={stat.name} className="bg-white rounded-lg shadow p-6">
@@ -30,12 +32,14 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
-      
-      <div className="bg-white rounded-lg shadow p-6">
+
+      {/* Analytics charts */}
+      <AnalyticsCharts />
+
+      {/* Recent transactions table */}
+      <div className="bg-white rounded-lg shadow p-6 mt-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h2>
-        <div className="text-gray-500 text-center py-8">
-          No recent transactions
-        </div>
+        <RecentTransactionsTable />
       </div>
     </div>
   );
