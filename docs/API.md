@@ -503,6 +503,278 @@ text
 
 ---
 
+## DEX Endpoints
+
+Query decentralized exchange (DEX) data and liquidity pools from DeDust and Ston.fi.
+
+### Get DEX Rates
+
+Fetch current exchange rates from all supported DEX providers.
+
+**Endpoint:** `GET /api/v1/dex/rates`  
+**Authentication:** Required
+
+**Query Parameters:**
+- `fromToken` (string, required): Source token symbol (e.g., "TON", "USDT")
+- `toToken` (string, required): Target token symbol
+- `amount` (number, optional): Amount to convert for quote
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "rates": [
+      {
+        "provider": "dedust",
+        "rate": 2.45,
+        "poolId": "EQD1...",
+        "liquidity": 125000,
+        "fee": 0.003,
+        "priceImpact": 0.12
+      },
+      {
+        "provider": "stonfi",
+        "rate": 2.47,
+        "poolId": "EQA2...",
+        "liquidity": 98000,
+        "fee": 0.0025,
+        "priceImpact": 0.15
+      }
+    ],
+    "bestRate": {
+      "provider": "stonfi",
+      "rate": 2.47,
+      "expectedOutput": 12.35
+    },
+    "timestamp": 1699564800000
+  }
+}
+```
+
+---
+
+### Get DEX Liquidity
+
+Retrieve liquidity pool information for a specific token pair.
+
+**Endpoint:** `GET /api/v1/dex/liquidity`  
+**Authentication:** Required
+
+**Query Parameters:**
+- `token0` (string, required): First token symbol
+- `token1` (string, required): Second token symbol
+- `provider` (string, optional): Filter by provider ("dedust", "stonfi", or omit for all)
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "pools": [
+      {
+        "provider": "dedust",
+        "poolId": "EQD1...",
+        "token0": "TON",
+        "token1": "USDT",
+        "reserve0": 50000,
+        "reserve1": 120000,
+        "totalLiquidity": 77460,
+        "fee": 0.003,
+        "volume24h": 250000,
+        "apy": 12.5
+      }
+    ],
+    "totalLiquidity": 77460,
+    "aggregatedVolume24h": 250000
+  }
+}
+```
+
+---
+
+### Find Best Route
+
+Find the optimal swap route for a given token pair and amount.
+
+**Endpoint:** `POST /api/v1/dex/route`  
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "fromToken": "TON",
+  "toToken": "USDT",
+  "amount": 10,
+  "maxHops": 2
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "route": [
+      {
+        "provider": "stonfi",
+        "poolId": "EQA2...",
+        "fromToken": "TON",
+        "toToken": "USDT",
+        "expectedOutput": 24.7,
+        "priceImpact": 0.15,
+        "fee": 0.025
+      }
+    ],
+    "totalOutput": 24.7,
+    "totalFees": 0.025,
+    "priceImpact": 0.15,
+    "estimatedGas": 0.05,
+    "executionTime": 180
+  }
+}
+```
+
+---
+
+### Execute Swap (Admin Only)
+
+Execute a swap through the DEX (requires admin privileges).
+
+**Endpoint:** `POST /api/v1/dex/swap`  
+**Authentication:** Required (Admin)
+
+**Request Body:**
+```json
+{
+  "provider": "stonfi",
+  "poolId": "EQA2...",
+  "fromToken": "TON",
+  "toToken": "USDT",
+  "amount": 10,
+  "minReceive": 24.0,
+  "slippage": 0.5
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "txHash": "abc123...",
+    "outputAmount": 24.65,
+    "executedRate": 2.465,
+    "gasUsed": 0.048,
+    "timestamp": 1699564800000
+  }
+}
+```
+
+**Error Codes:**
+| Code | Status | Description |
+|------|--------|-------------|
+| `INSUFFICIENT_LIQUIDITY` | 400 | Pool lacks liquidity |
+| `SLIPPAGE_EXCEEDED` | 400 | Price moved beyond tolerance |
+| `SWAP_FAILED` | 500 | Blockchain transaction failed |
+| `ADMIN_ONLY` | 403 | Admin privileges required |
+
+---
+
+## P2P Order Endpoints
+
+Manage peer-to-peer Stars ↔ TON orders.
+
+### Create P2P Order
+
+Create a new buy or sell order for Stars/TON exchange.
+
+**Endpoint:** `POST /api/v1/p2p/orders`  
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "type": "buy",
+  "starsAmount": 1000,
+  "tonAmount": 5.0,
+  "rate": 0.005
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "success": true,
+  "data": {
+    "orderId": "order-uuid",
+    "type": "buy",
+    "starsAmount": 1000,
+    "tonAmount": 5.0,
+    "rate": 0.005,
+    "status": "pending",
+    "createdAt": "2025-11-12T18:00:00Z",
+    "expiresAt": "2025-11-12T19:00:00Z"
+  }
+}
+```
+
+---
+
+### Get P2P Orders
+
+List all P2P orders (own or available for matching).
+
+**Endpoint:** `GET /api/v1/p2p/orders`  
+**Authentication:** Required
+
+**Query Parameters:**
+- `type` (string, optional): Filter by "buy" or "sell"
+- `status` (string, optional): Filter by status
+- `own` (boolean, optional): Show only user's orders
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "orders": [
+      {
+        "orderId": "order-uuid",
+        "type": "buy",
+        "starsAmount": 1000,
+        "tonAmount": 5.0,
+        "rate": 0.005,
+        "status": "pending",
+        "createdAt": "2025-11-12T18:00:00Z"
+      }
+    ],
+    "total": 15,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+
+---
+
+### Cancel P2P Order
+
+Cancel a pending P2P order.
+
+**Endpoint:** `DELETE /api/v1/p2p/orders/:orderId`  
+**Authentication:** Required
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Order cancelled successfully"
+}
+```
+
+---
+
 ## Webhooks
 
 Configure webhook URL in your user profile to receive real-time events.
