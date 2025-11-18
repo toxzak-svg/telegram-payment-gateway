@@ -11,3 +11,6 @@ export const db = getDatabase();
 
 // For backwards compatibility with pg Pool
 export const pool = db as any;
+
+// Export getDatabase for use in controllers
+export { getDatabase } from '@tg-payment/core';

@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { DexAggregatorService, P2PLiquidityService } from '@tg-payment/core';
-import { getDatabase } from '../db/connection';
+import { DexAggregatorService, P2PLiquidityService, getPool } from '@tg-payment/core';
 
 /**
  * DEX Controller
@@ -130,8 +129,8 @@ export class DexController {
         });
       }
 
-      const db = getDatabase();
-      const p2pLiquidityService = new P2PLiquidityService(db);
+      const pool = getPool();
+      const p2pLiquidityService = new P2PLiquidityService(pool);
       
       const sources = await p2pLiquidityService.getAllLiquiditySources(
         fromCurrency as string,
@@ -176,8 +175,8 @@ export class DexController {
         });
       }
 
-      const db = getDatabase();
-      const p2pLiquidityService = new P2PLiquidityService(db);
+      const pool = getPool();
+      const p2pLiquidityService = new P2PLiquidityService(pool);
       
       const route = await p2pLiquidityService.findBestRoute(
         fromCurrency as string,

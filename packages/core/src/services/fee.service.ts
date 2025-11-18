@@ -1,3 +1,5 @@
+import { Database } from '../db/connection';
+
 import { Pool } from 'pg';
 
 export interface PlatformConfig {

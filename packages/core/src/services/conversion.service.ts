@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { v4 as uuidv4 } from 'uuid';
 import { P2PLiquidityService } from './p2p-liquidity.service';
 import { FeeService } from './fee.service';
 
@@ -355,7 +356,8 @@ export class ConversionService {
           [status.errorMessage, conversionId]
         );
       } else {
-        this.pollFragmentStatus(conversionId, fragmentTxId);
+        // Continue polling
+        this.pollConversionStatus(conversionId, txHash);
       }
     }, 5000);
   }

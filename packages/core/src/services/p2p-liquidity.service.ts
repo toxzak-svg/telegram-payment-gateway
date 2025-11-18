@@ -39,7 +39,8 @@ export class P2PLiquidityService {
   constructor(pool: Pool) {
     this.pool = pool;
     this.dexAggregator = new DexAggregatorService();
-    this.p2pService = new StarsP2PService(pool);
+    // Pass pool with type assertion for StarsP2PService compatibility
+    this.p2pService = new StarsP2PService(pool as any);
   }
 
   /**

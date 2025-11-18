@@ -1,7 +1,7 @@
 import { createServer } from 'http';
 import express from 'express';
 import bodyParser from 'body-parser';
-import routes from '../../src/routes/v1.routes';
+import routes from '../../routes/v1.routes';
 
 export function buildTestApp() {
   const app = express();

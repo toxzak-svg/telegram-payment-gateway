@@ -55,52 +55,10 @@ router.get('/fees/uncollected', authenticate, FeeCollectionController.getUncolle
 router.post('/fees/collections/:id/complete', authenticate, FeeCollectionController.markCompleted);
 router.get('/fees/collections', authenticate, FeeCollectionController.getHistory);
 
-// Temporary: Simple health check only
-router.get('/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'API is healthy' });
-});
-
-// User routes (commented while we build controller methods)
-// router.get('/users/me', authenticate, userController.getCurrentUser);
-// router.get('/users/me/balance', authenticate, userController.getBalance);
-// router.get('/users/me/transactions', authenticate, userController.getTransactions);
-
-// Admin routes (basic health check only for now)
-// router.get('/admin/stats', authenticate, requireAdmin, adminController.getStats);
-// router.get('/admin/users', authenticate, requireAdmin, adminController.getUsers);
-// router.get('/admin/users/:id', authenticate, requireAdmin, adminController.getUser);
-// router.put('/admin/users/:id', authenticate, requireAdmin, adminController.updateUser);
-// router.get('/admin/payments', authenticate, requireAdmin, adminController.getPayments);
-// router.get('/admin/conversions', authenticate, requireAdmin, adminController.getConversions);
-
-// Fee collection routes
-// router.get('/fees/stats', authenticate, requireAdmin, feeCollectionController.getFeeStats);
-// router.get('/fees/history', authenticate, requireAdmin, feeCollectionController.getFeeHistory);
-// router.post('/fees/collect', authenticate, requireAdmin, feeCollectionController.collectFees);
+// P2P Order routes
+router.post('/p2p/orders', authenticate, P2POrdersController.createOrder);
+router.get('/p2p/orders', authenticate, P2POrdersController.listOpenOrders);
+router.get('/p2p/orders/:orderId', authenticate, P2POrdersController.getOrder);
+router.post('/p2p/orders/:orderId/cancel', authenticate, P2POrdersController.cancelOrder);
 
 export default router;
-
-// P2P Routes
-import { P2POrdersController } from '../controllers/p2p-orders.controller';
-
-const p2pController = new P2POrdersController(p2pService);
-
-router.post('/p2p/sell', authenticateApiKey, (req, res, next) => 
-  p2pController.createSellOrder(req, res, next)
-);
-
-router.post('/p2p/buy', authenticateApiKey, (req, res, next) => 
-  p2pController.createBuyOrder(req, res, next)
-);
-
-router.get('/p2p/orders', authenticateApiKey, (req, res, next) => 
-  p2pController.listOpenOrders(req, res, next)
-);
-
-router.get('/p2p/orders/:orderId', authenticateApiKey, (req, res, next) => 
-  p2pController.getOrder(req, res, next)
-);
-
-router.post('/p2p/match', authenticateApiKey, adminOnly, (req, res, next) => 
-  p2pController.triggerMatching(req, res, next)
-);
