@@ -25,6 +25,13 @@ export { StarsOrderModel } from './models/stars-order.model';
 export { DexAggregatorService } from './services/dex-aggregator.service';
 export { P2PLiquidityService } from './services/p2p-liquidity.service';
 export { ConversionService } from './services/conversion.service';
+export { DexError, DexErrorCode, parseDexError, DexRetryHandler } from './services/dex-error-handler';
+
+// ============================================
+// CONTRACTS
+// ============================================
+export { DeDustPool, DeDustVault } from './contracts/dedust.contract';
+export { StonfiRouter } from './contracts/stonfi.contract';
 
 // ============================================
 // MODELS
