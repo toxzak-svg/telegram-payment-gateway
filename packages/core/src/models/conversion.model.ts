@@ -10,7 +10,9 @@ export interface Conversion {
   targetAmount?: number;
   exchangeRate?: number;
   rateLockedUntil?: number;
-  fragmentTxId?: string;
+  dexPoolId?: string;
+  dexProvider?: string;
+  dexTxHash?: string;
   tonTxHash?: string;
   status: ConversionStatus;
   fees?: ConversionFees;
@@ -41,7 +43,7 @@ export enum ConversionStatus {
 
 export interface ConversionFees {
   telegram?: number;
-  fragment?: number;
+  dex?: number;
   ton?: number;
   exchange?: number;
   total: number;
@@ -103,7 +105,9 @@ export class ConversionModel {
       status?: ConversionStatus;
       exchangeRate?: number;
       rateLockedUntil?: number;
-      fragmentTxId?: string;
+      dexPoolId?: string;
+      dexProvider?: string;
+      dexTxHash?: string;
       tonTxHash?: string;
       targetAmount?: number;
       sourceAmount?: number;
@@ -258,7 +262,9 @@ export class ConversionModel {
       targetAmount: row.target_amount ? parseFloat(row.target_amount) : undefined,
       exchangeRate: row.exchange_rate ? parseFloat(row.exchange_rate) : undefined,
       rateLockedUntil: row.rate_locked_until ? parseInt(row.rate_locked_until) : undefined,
-      fragmentTxId: row.fragment_tx_id,
+      dexPoolId: row.dex_pool_id,
+      dexProvider: row.dex_provider,
+      dexTxHash: row.dex_tx_hash,
       tonTxHash: row.ton_tx_hash,
       status: row.status as ConversionStatus,
       fees: typeof row.fees === 'string' ? JSON.parse(row.fees) : row.fees,

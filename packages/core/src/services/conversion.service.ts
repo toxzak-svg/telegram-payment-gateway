@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { FragmentService } from './fragment.service';
+import { P2PLiquidityService } from './p2p-liquidity.service';
 import { FeeService } from './fee.service';
 
 export interface ConversionRecord {
@@ -12,7 +12,9 @@ export interface ConversionRecord {
   target_amount: number | null;
   exchange_rate: number | null;
   rate_locked_until: number | null;
-  fragment_tx_id: string | null;
+  dex_pool_id: string | null;
+  dex_provider: string | null;
+  dex_tx_hash: string | null;
   ton_tx_hash: string | null;
   status: string;
   fees: any;
@@ -30,7 +32,7 @@ export interface RateQuote {
   targetAmount: number;
   exchangeRate: number;
   fees: {
-    fragment: number;
+    dex: number;
     network: number;
     platform: number;
     total: number;
@@ -43,12 +45,12 @@ export interface RateQuote {
 
 export class ConversionService {
   private pool: Pool;
-  private fragmentService: FragmentService;
+  private p2pLiquidityService: P2PLiquidityService;
   private feeService: FeeService;
 
-  constructor(pool: Pool, tonWalletAddress: string) {
+  constructor(pool: Pool) {
     this.pool = pool;
-    this.fragmentService = new FragmentService(tonWalletAddress);
+    this.p2pLiquidityService = new P2PLiquidityService(pool);
     this.feeService = new FeeService(pool);
   }
 
@@ -73,7 +75,7 @@ export class ConversionService {
       targetAmount,
       exchangeRate: baseRate,
       fees: {
-        fragment: feeBreakdown.fragment,
+        dex: feeBreakdown.dex,
         network: feeBreakdown.network,
         platform: feeBreakdown.platform,
         total: totalFees,
@@ -231,9 +233,9 @@ export class ConversionService {
         platformFeeTon: feeAmountTon,
       });
 
-      // Start conversion with Fragment (async)
-      this.executeFragmentConversion(conversion.id, paymentIds).catch((err) =>
-        console.error('Fragment conversion error:', err)
+      // Start conversion with P2P/DEX (async)
+      this.executeP2PConversion(conversion.id, paymentIds).catch((err) =>
+        console.error('P2P conversion error:', err)
       );
 
       return conversion;
@@ -247,9 +249,9 @@ export class ConversionService {
   }
 
   /**
-   * Execute conversion via Fragment (background process)
+   * Execute conversion via P2P/DEX (background process)
    */
-  private async executeFragmentConversion(
+  private async executeP2PConversion(
     conversionId: string,
     paymentIds: string[]
   ): Promise<void> {
@@ -259,26 +261,50 @@ export class ConversionService {
         [conversionId]
       );
 
-      const fragmentResult = await this.fragmentService.convertStarsToTON(
-        paymentIds,
-        { lockedRateDuration: 300 }
+      // Get conversion details
+      const conversionResult = await this.pool.query(
+        'SELECT * FROM conversions WHERE id = $1',
+        [conversionId]
+      );
+      const conversion = conversionResult.rows[0];
+
+      // Find best route (P2P or DEX)
+      const route = await this.p2pLiquidityService.findBestRoute(
+        conversion.source_currency,
+        conversion.target_currency,
+        conversion.source_amount
       );
 
-      await this.pool.query(
-        `UPDATE conversions 
-         SET fragment_tx_id = $1, status = 'phase2_committed', updated_at = NOW()
-         WHERE id = $2`,
-        [fragmentResult.fragmentTxId, conversionId]
-      );
-
-      console.log('✅ Fragment conversion submitted:', {
+      // Execute conversion through best route
+      const result = await this.p2pLiquidityService.executeConversion(
         conversionId,
-        fragmentTxId: fragmentResult.fragmentTxId,
-      });
+        route
+      );
 
-      this.pollFragmentStatus(conversionId, fragmentResult.fragmentTxId!);
+      if (result.success) {
+        await this.pool.query(
+          `UPDATE conversions 
+           SET dex_pool_id = $1, dex_provider = $2, dex_tx_hash = $3, 
+               status = 'phase2_committed', updated_at = NOW()
+           WHERE id = $4`,
+          [result.dexPoolId, result.dexProvider, result.txHash, conversionId]
+        );
+
+        console.log('✅ P2P/DEX conversion submitted:', {
+          conversionId,
+          provider: result.dexProvider,
+          txHash: result.txHash,
+        });
+
+        // Poll for completion
+        if (result.txHash) {
+          this.pollConversionStatus(conversionId, result.txHash);
+        }
+      } else {
+        throw new Error(result.error || 'Conversion execution failed');
+      }
     } catch (error) {
-      console.error('❌ Fragment conversion error:', error);
+      console.error('❌ P2P/DEX conversion error:', error);
       await this.pool.query(
         `UPDATE conversions 
          SET status = 'failed', error_message = $1, updated_at = NOW()
@@ -289,14 +315,15 @@ export class ConversionService {
   }
 
   /**
-   * Poll Fragment for conversion status
+   * Poll blockchain for conversion status
    */
-  private async pollFragmentStatus(
+  private async pollConversionStatus(
     conversionId: string,
-    fragmentTxId: string
+    txHash: string
   ): Promise<void> {
     setTimeout(async () => {
-      const status = await this.fragmentService.pollConversionStatus(fragmentTxId);
+      // TODO: Implement blockchain transaction status polling
+      const status = { status: 'pending' } as any;
 
       if (status.status === 'confirmed') {
         await this.pool.query(

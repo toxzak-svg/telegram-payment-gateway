@@ -4,6 +4,7 @@ import * as conversionController from '../controllers/conversion.controller';
 import UserController from '../controllers/user.controller';
 import AdminController from '../controllers/admin.controller';
 import FeeCollectionController from '../controllers/fee-collection.controller';
+import DexController from '../controllers/dex.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import P2POrdersController from '../controllers/p2p-orders.controller';
 
@@ -25,6 +26,12 @@ router.get('/conversions/rate', conversionController.getRate);
 router.post('/conversions', authenticate, conversionController.createConversion);
 router.get('/conversions/:id', authenticate, conversionController.getConversion);
 router.get('/conversions', authenticate, conversionController.getConversionHistory);
+
+// DEX routes
+router.get('/dex/quote', DexController.getQuote);
+router.post('/dex/swap', authenticate, DexController.executeSwap);
+router.get('/dex/liquidity', DexController.getLiquidity);
+router.get('/dex/route', DexController.getBestRoute);
 
 // User routes
 router.post('/users/register', UserController.register);

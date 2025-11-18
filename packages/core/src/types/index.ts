@@ -66,7 +66,7 @@ export interface EstimationResult {
   exchangeRate: number;
   fees: {
     telegram: number;
-    fragment: number;
+    dex: number;
     exchange: number;
   };
   total: number;

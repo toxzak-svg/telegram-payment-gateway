@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 
 export interface PlatformConfig {
   platformFeePercentage: number;
-  fragmentFeePercentage: number;
+  dexFeePercentage: number;
   networkFeePercentage: number;
   platformTonWallet: string;
   minConversionAmount: number;
@@ -10,7 +10,7 @@ export interface PlatformConfig {
 
 export interface FeeBreakdown {
   platform: number;
-  fragment: number;
+  dex: number;
   network: number;
   total: number;
   platformPercentage: number;
@@ -46,7 +46,7 @@ export class FeeService {
     const result = await this.pool.query(
       `SELECT
         platform_fee_percentage,
-        fragment_fee_percentage,
+        dex_fee_percentage,
         network_fee_percentage,
         platform_ton_wallet,
         min_conversion_amount
@@ -62,7 +62,7 @@ export class FeeService {
     const row = result.rows[0];
     this.config = {
       platformFeePercentage: parseFloat(row.platform_fee_percentage),
-      fragmentFeePercentage: parseFloat(row.fragment_fee_percentage),
+      dexFeePercentage: parseFloat(row.dex_fee_percentage),
       networkFeePercentage: parseFloat(row.network_fee_percentage),
       platformTonWallet: row.platform_ton_wallet,
       minConversionAmount: row.min_conversion_amount,
@@ -78,14 +78,14 @@ export class FeeService {
     const config = await this.getConfig();
 
     const platformFee = sourceAmount * config.platformFeePercentage;
-    const fragmentFee = sourceAmount * config.fragmentFeePercentage;
+    const dexFee = sourceAmount * config.dexFeePercentage;
     const networkFee = sourceAmount * config.networkFeePercentage;
 
     return {
       platform: platformFee,
-      fragment: fragmentFee,
+      dex: dexFee,
       network: networkFee,
-      total: platformFee + fragmentFee + networkFee,
+      total: platformFee + dexFee + networkFee,
       platformPercentage: config.platformFeePercentage * 100,
     };
   }

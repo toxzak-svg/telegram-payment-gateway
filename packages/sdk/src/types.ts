@@ -47,7 +47,7 @@ export interface EstimationResult {
   lockedUntil?: number;
   fees: {
     telegram?: number;
-    fragment?: number;
+    dex?: number;
     ton?: number;
     exchange?: number;
     total: number;
@@ -83,12 +83,14 @@ export interface Conversion {
   targetAmount?: number;
   exchangeRate?: number;
   rateLockedUntil?: number;
-  fragmentTxId?: string;
+  dexPoolId?: string;
+  dexProvider?: string;
+  dexTxHash?: string;
   tonTxHash?: string;
   status: ConversionStatusType;
   fees?: {
     telegram?: number;
-    fragment?: number;
+    dex?: number;
     ton?: number;
     exchange?: number;
     total: number;

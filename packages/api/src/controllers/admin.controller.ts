@@ -207,7 +207,7 @@ export class AdminController {
         success: true,
         config: {
           platformFeePercentage: `${(config.platformFeePercentage * 100).toFixed(2)}%`,
-          fragmentFeePercentage: `${(config.fragmentFeePercentage * 100).toFixed(2)}%`,
+          dexFeePercentage: `${(config.dexFeePercentage * 100).toFixed(2)}%`,
           networkFeePercentage: `${(config.networkFeePercentage * 100).toFixed(2)}%`,
           platformTonWallet: config.platformTonWallet,
           minConversionAmount: config.minConversionAmount,
@@ -234,7 +234,7 @@ export class AdminController {
       const { db } = AdminController.getServices();
       const {
         platformFeePercentage,
-        fragmentFeePercentage,
+        dexFeePercentage,
         networkFeePercentage,
         platformTonWallet,
         minConversionAmount,
@@ -249,9 +249,9 @@ export class AdminController {
         values.push(parseFloat(platformFeePercentage) / 100);
       }
 
-      if (fragmentFeePercentage !== undefined) {
-        updates.push(`fragment_fee_percentage = $${paramIndex++}`);
-        values.push(parseFloat(fragmentFeePercentage) / 100);
+      if (dexFeePercentage !== undefined) {
+        updates.push(`dex_fee_percentage = $${paramIndex++}`);
+        values.push(parseFloat(dexFeePercentage) / 100);
       }
 
       if (networkFeePercentage !== undefined) {
