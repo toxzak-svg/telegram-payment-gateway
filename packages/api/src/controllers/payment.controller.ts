@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PaymentModel, PaymentStatus, FeeService } from '@tg-payment/core';
+import { PaymentModel, FeeService, PaymentStatus } from '@tg-payment/core';
 import { getDatabase } from '@tg-payment/core';
 import { TelegramService } from '@tg-payment/core';
 
@@ -30,7 +30,12 @@ export class PaymentController {
 
       const db = getDatabase();
       const paymentModel = new PaymentModel(db);
-      const telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN!);
+      const telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN!, {
+        paymentModel,
+        resolveUserId: () => userId,
+        allowedCurrencies: ['XTR'],
+        minStarsAmount: parseInt(process.env.MIN_CONVERSION_STARS || '100', 10),
+      });
 
       console.log('📥 Webhook received:', {
         userId,
@@ -39,31 +44,21 @@ export class PaymentController {
 
       // Process successful payment
       if (payload.message?.successful_payment) {
-        const successfulPayment = payload.message.successful_payment;
-
-        // Create payment record
-        const payment = await paymentModel.create({
-          userId,
-          telegramInvoiceId: successfulPayment.invoice_payload || 'unknown',
-          starsAmount: successfulPayment.total_amount,
-          telegramPaymentId: successfulPayment.telegram_payment_charge_id,
-          status: PaymentStatus.RECEIVED,
-          rawPayload: payload
-        });
+        const payment = await telegramService.processSuccessfulPayment(payload);
 
         console.log('✅ Payment created:', payment.id);
 
-// Wait a tiny bit to ensure DB transaction is committed
-await new Promise(resolve => setTimeout(resolve, 10));
+        // Wait a tiny bit to ensure DB transaction is committed
+        await new Promise(resolve => setTimeout(resolve, 10));
 
-// 💰 CALCULATE AND CREATE PLATFORM FEES
-try {
-  const feeService = new FeeService(db as any);
-  await feeService.calculateFeesForPayment(payment.id);
-  console.log('💰 Platform fee created for payment:', payment.id);
-} catch (feeError: any) {
-  console.error('⚠️ Fee calculation error:', feeError.message);
-}
+        // 💰 CALCULATE AND CREATE PLATFORM FEES
+        try {
+          const feeService = new FeeService(db as any);
+          await feeService.calculateFeesForPayment(payment.id);
+          console.log('💰 Platform fee created for payment:', payment.id);
+        } catch (feeError: any) {
+          console.error('⚠️ Fee calculation error:', feeError.message);
+        }
 
         res.status(200).json({
           success: true,

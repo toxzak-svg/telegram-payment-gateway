@@ -2,30 +2,53 @@ import { TelegramService } from '../../services/Telegram.service';
 import { RateAggregatorService } from '../../services/rate.aggregator';
 import PaymentRepository from '../../models/payment.repository';
 import { DexAggregatorService } from '../../services/dex-aggregator.service';
+import { PaymentStatus } from '../../models/payment.model';
 
 describe('TelegramService', () => {
   let service: TelegramService;
+  let paymentModelMock: any;
 
   beforeEach(() => {
-    service = new TelegramService('test-webhook-secret');
+    paymentModelMock = {
+      create: jest.fn().mockResolvedValue({
+        id: 'payment-1',
+        userId: 'user-1',
+        telegramInvoiceId: 'payload-base64',
+        starsAmount: 50000,
+        status: PaymentStatus.RECEIVED,
+        telegramPaymentId: 'charge-123',
+        rawPayload: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
+    };
+
+    service = new TelegramService('test-webhook-secret', {
+      paymentModel: paymentModelMock,
+      resolveUserId: () => 'user-1',
+      allowedCurrencies: ['XTR'],
+      minStarsAmount: 100,
+    });
   });
 
-  test('should process successful payment', () => {
+  test('should process successful payment and persist to database', async () => {
     const payload = {
       message: {
         from: { id: 12345, username: 'testuser' },
         successful_payment: {
-          telegramPaymentChargeId: 'charge-123',
-          providerPaymentChargeId: 'provider-456',
+          telegram_payment_charge_id: 'charge-123',
+          provider_payment_charge_id: 'provider-456',
           currency: 'XTR',
-          totalAmount: 50000, // 500 Stars (in centimes)
-          invoicePayload: 'payload-base64',
+          total_amount: 50000,
+          invoice_payload: 'payload-base64',
         }
       }
     };
 
-    const payment = service.processSuccessfulPayment(payload as any);
-    expect(payment).toBeDefined();
+    const payment = await service.processSuccessfulPayment(payload as any);
+    expect(paymentModelMock.create).toHaveBeenCalled();
+    expect(payment.telegramChargeId).toBe('charge-123');
+    expect(payment.userId).toBe('user-1');
   });
 
   test('should reject invalid pre-checkout query', async () => {
@@ -33,8 +56,21 @@ describe('TelegramService', () => {
       pre_checkout_query: undefined
     };
 
-    const isValid = await service.verifyPreCheckout(invalidPayload as any);
-    expect(isValid).toBe(false);
+    await expect(service.verifyPreCheckout(invalidPayload as any)).resolves.toBe(false);
+  });
+
+  test('should block unsupported currency during pre-checkout', async () => {
+    const payload = {
+      pre_checkout_query: {
+        id: 'query-1',
+        from: { id: 1, username: 'user' },
+        currency: 'USD',
+        total_amount: 1000,
+        invoice_payload: 'payload-base64',
+      }
+    };
+
+    await expect(service.verifyPreCheckout(payload as any)).resolves.toBe(false);
   });
 
   test('should set webhook', async () => {

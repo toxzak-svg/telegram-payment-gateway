@@ -5,6 +5,10 @@
     "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./packages",
+    "baseUrl": ".",
+    "paths": {
+      "@tg-payment/core": ["packages/core/src"]
+    },
     "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,

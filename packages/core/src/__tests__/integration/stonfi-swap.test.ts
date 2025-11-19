@@ -1,6 +1,13 @@
 import { DexAggregatorService } from '../../services/dex-aggregator.service';
 
-describe('Ston.fi Swap Integration Tests', () => {
+const runDexIntegrationTests = process.env.RUN_DEX_INTEGRATION_TESTS === 'true';
+const describeIfEnabled = runDexIntegrationTests ? describe : describe.skip;
+
+if (!runDexIntegrationTests) {
+  console.warn('⚠️ Skipping Ston.fi integration tests (set RUN_DEX_INTEGRATION_TESTS=true to enable).');
+}
+
+describeIfEnabled('Ston.fi Swap Integration Tests', () => {
   let dexService: DexAggregatorService;
 
   beforeAll(() => {

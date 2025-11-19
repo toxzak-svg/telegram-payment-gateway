@@ -1,7 +1,14 @@
 import { DexAggregatorService } from '../../services/dex-aggregator.service';
 import { DexErrorCode } from '../../services/dex-error-handler';
 
-describe('DeDust Swap Integration Tests', () => {
+const runDexIntegrationTests = process.env.RUN_DEX_INTEGRATION_TESTS === 'true';
+const describeIfEnabled = runDexIntegrationTests ? describe : describe.skip;
+
+if (!runDexIntegrationTests) {
+  console.warn('⚠️ Skipping DeDust integration tests (set RUN_DEX_INTEGRATION_TESTS=true to enable).');
+}
+
+describeIfEnabled('DeDust Swap Integration Tests', () => {
   let dexService: DexAggregatorService;
 
   beforeAll(() => {
