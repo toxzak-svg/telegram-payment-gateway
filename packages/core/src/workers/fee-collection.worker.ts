@@ -150,7 +150,7 @@ class FeeCollectionWorker {
 
       // Send TON to platform wallet
       try {
-        const txHash = await this.tonService.sendTon(
+        const txHash = await this.tonService.sendTON(
           platformWallet,
           amountToSend,
           'Platform fee collection'
