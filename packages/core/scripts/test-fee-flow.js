@@ -92,7 +92,6 @@ async function testFeeFlow() {
 
     const feeResult = await pool.query(`
       INSERT INTO platform_fees (
-        payment_id,
         user_id,
         fee_percentage,
         fee_amount_stars,
@@ -101,10 +100,9 @@ async function testFeeFlow() {
         status,
         fee_type,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'platform', NOW())
+      ) VALUES ($1, $2, $3, $4, $5, 'pending', 'platform', NOW())
       RETURNING id
     `, [
-      paymentId,
       testUser.id,
       config.platform_fee_percentage,
       feeAmountStars,
