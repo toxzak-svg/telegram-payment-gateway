@@ -46,6 +46,7 @@ export class DexAggregatorService {
   private wallet: WalletContractV4 | null = null;
   private keyPair: any = null;
   private retryHandler: DexRetryHandler;
+  private simulationMode: boolean;
   
   constructor() {
     this.dedustApiUrl = process.env.DEDUST_API_URL || 'https://api.dedust.io';
@@ -58,6 +59,8 @@ export class DexAggregatorService {
     });
     
     this.retryHandler = new DexRetryHandler();
+    const simulationFlag = process.env.DEX_SIMULATION_MODE ?? (process.env.NODE_ENV === 'test' ? 'true' : 'false');
+    this.simulationMode = simulationFlag === 'true';
   }
 
   /**
@@ -66,6 +69,19 @@ export class DexAggregatorService {
   async initializeWallet(): Promise<void> {
     if (this.wallet) {
       return; // Already initialized
+    }
+
+    if (this.isSimulationMode()) {
+      this.keyPair = {
+        publicKey: Buffer.alloc(32),
+        secretKey: Buffer.alloc(64)
+      };
+      this.wallet = WalletContractV4.create({
+        workchain: 0,
+        publicKey: this.keyPair.publicKey,
+      });
+      console.log('🧪 DEX simulator wallet initialized');
+      return;
     }
 
     const mnemonic = process.env.TON_WALLET_MNEMONIC;
@@ -140,6 +156,9 @@ export class DexAggregatorService {
     toToken: string,
     amount: number
   ): Promise<DexQuote> {
+    if (this.isSimulationMode()) {
+      return this.buildMockQuote('dedust', fromToken, toToken, amount);
+    }
     try {
       const response = await axios.get(`${this.dedustApiUrl}/v1/quote`, {
         params: {
@@ -187,6 +206,9 @@ export class DexAggregatorService {
     toToken: string,
     amount: number
   ): Promise<DexQuote> {
+    if (this.isSimulationMode()) {
+      return this.buildMockQuote('stonfi', fromToken, toToken, amount);
+    }
     try {
       const response = await axios.get(`${this.stonfiApiUrl}/v1/swap/simulate`, {
         params: {
@@ -251,6 +273,9 @@ export class DexAggregatorService {
     amount: number,
     minOutput: number
   ): Promise<SwapResult> {
+    if (this.isSimulationMode()) {
+      return this.simulateSwap('dedust', poolId, fromToken, toToken, amount, minOutput);
+    }
     try {
       // Initialize wallet if not done
       await this.initializeWallet();
@@ -367,6 +392,9 @@ export class DexAggregatorService {
     amount: number,
     minOutput: number
   ): Promise<SwapResult> {
+    if (this.isSimulationMode()) {
+      return this.simulateSwap('stonfi', poolId, fromToken, toToken, amount, minOutput);
+    }
     try {
       // Initialize wallet if not done
       await this.initializeWallet();
@@ -581,6 +609,76 @@ export class DexAggregatorService {
    */
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private isSimulationMode(): boolean {
+    return this.simulationMode;
+  }
+
+  private buildMockQuote(
+    provider: 'dedust' | 'stonfi',
+    fromToken: string,
+    toToken: string,
+    amount: number
+  ): DexQuote {
+    const baseRate = provider === 'dedust' ? 2.12 : 2.08;
+    const liquidity = provider === 'dedust' ? 125000 : 98000;
+    const outputAmount = parseFloat((amount * baseRate).toFixed(6));
+    const estimatedGas = provider === 'dedust' ? 0.018 : 0.021;
+
+    const pool: DexPoolInfo = {
+      provider,
+      poolId: provider === 'dedust' ? 'EQB_MOCK_DEDUST_POOL' : 'EQB_MOCK_STONFI_POOL',
+      rate: baseRate,
+      liquidity,
+      fee: 0.003,
+      slippage: 0.005,
+    };
+
+    return {
+      inputAmount: amount,
+      outputAmount,
+      rate: baseRate,
+      pools: [pool],
+      bestPool: pool,
+      estimatedGas,
+      route: [fromToken, toToken],
+    };
+  }
+
+  private simulateSwap(
+    provider: 'dedust' | 'stonfi',
+    poolId: string,
+    fromToken: string,
+    toToken: string,
+    amount: number,
+    minOutput: number
+  ): SwapResult {
+    if (!poolId || !poolId.startsWith('EQ')) {
+      throw new DexError(
+        DexErrorCode.POOL_NOT_FOUND,
+        `Pool ${poolId} not recognized in simulator`
+      );
+    }
+
+    const mockRate = provider === 'dedust' ? 2.1 : 2.04;
+    const outputAmount = parseFloat((amount * mockRate).toFixed(6));
+
+    if (outputAmount < minOutput) {
+      throw new DexError(
+        DexErrorCode.SLIPPAGE_EXCEEDED,
+        `Simulated output ${outputAmount} below minimum ${minOutput}`,
+        { provider, mockRate }
+      );
+    }
+
+    const gasUsed = provider === 'dedust' ? 0.015 : 0.018;
+
+    return {
+      txHash: `simulated-${provider}-${Date.now()}`,
+      outputAmount,
+      gasUsed,
+    };
   }
 }
 

@@ -26,6 +26,7 @@ export class TonBlockchainService {
   private wallet: WalletContractV4 | null = null;
   private walletAddress: Address | null = null;
   private keyPair: any = null;
+  private walletInfo?: WalletInfo;
 
   constructor(
     private endpoint: string,
@@ -57,12 +58,14 @@ export class TonBlockchainService {
 
       this.walletAddress = this.wallet.address;
 
-      console.log('✅ TON wallet initialized:', this.walletAddress.toString());
-
-      return {
+      this.walletInfo = {
         address: this.walletAddress.toString(),
         publicKey: this.keyPair.publicKey.toString('hex'),
       };
+
+      console.log('✅ TON wallet initialized:', this.walletAddress.toString());
+
+      return this.walletInfo;
     } catch (error) {
       console.error('❌ Failed to initialize wallet:', error);
       throw error;
@@ -77,6 +80,17 @@ export class TonBlockchainService {
       throw new Error('Wallet not initialized');
     }
     return this.walletAddress.toString();
+  }
+
+  getWalletInfo(): WalletInfo {
+    if (!this.walletInfo) {
+      throw new Error('Wallet not initialized');
+    }
+    return this.walletInfo;
+  }
+
+  isWalletInitialized(): boolean {
+    return Boolean(this.walletAddress);
   }
 
   /**

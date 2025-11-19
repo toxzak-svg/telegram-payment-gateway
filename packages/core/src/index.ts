@@ -26,6 +26,8 @@ export { DexAggregatorService } from './services/dex-aggregator.service';
 export { P2PLiquidityService } from './services/p2p-liquidity.service';
 export { ConversionService } from './services/conversion.service';
 export { DexError, DexErrorCode, parseDexError, DexRetryHandler } from './services/dex-error-handler';
+export { DepositMonitorService } from './services/deposit-monitor.service';
+export { SettlementService } from './services/settlement.service';
 
 // ============================================
 // CONTRACTS

@@ -28,7 +28,7 @@ This codebase is a **monorepo payment gateway** converting Telegram Stars to TON
 2. **Deposit monitoring** → `TonBlockchainService.monitorDeposits()` → `WalletManagerService` verifies confirmations → triggers conversion
 3. **P2P rate discovery** → `P2PLiquidityService` queries DeDust & Ston.fi → best rate selected → conversion executed
 4. **Manual TON withdrawal** → User sends Stars via Telegram app → receives deposit address → transfers TON manually → gateway confirms on-chain → triggers P2P swap
-5. **Rate aggregation** → `DexAggregator` + `RateAggregator` pull from CoinGecko/Binance/DeDust/Ston.fi → cached in memory with TTL
+5. **Rate aggregation** → `DexAggregator` + `RateAggregator` pull from CoinGecko/DeDust/Ston.fi/CoinMarketCap → cached in memory with TTL
 
 ## Payment Flow Details
 
@@ -149,7 +149,7 @@ export class PaymentService {
 3. `telegram.service.ts`: Telegram Bot API webhooks, payment verification
 4. `payment-processor.service.ts`: Payment state machine (pending → received → awaiting_ton → ton_pending → ton_confirmed → converting → settled)
 5. `dex-aggregator.service.ts`: DEX rate aggregation (DeDust, Ston.fi APIs)
-6. `rate.aggregator.ts`: Multi-source exchange rates (CoinGecko, Binance, DEX pools) with fallback logic
+6. `rate.aggregator.ts`: Multi-source exchange rates (CoinGecko, DEX pools, CoinMarketCap) with fallback logic
 7. `settlement.service.ts`: Fiat conversion tracking and payout processing
 8. `reconciliation.service.ts`: Periodic state consistency validation
 9. `webhook.service.ts`: Async webhook delivery to developers with retry logic
@@ -333,7 +333,7 @@ static async createPayment(req: Request, res: Response, next: NextFunction) {
    - User identification from Telegram ID
 
 4. **RateAggregator** (`packages/core/src/services/rate.aggregator.ts`)
-   - Multi-source rate fetching (CoinGecko, Binance, DEX pools)
+   - Multi-source rate fetching (CoinGecko, DEX pools, CoinMarketCap)
    - Rate caching with TTL
    - Fallback logic when primary source fails
 

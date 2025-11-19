@@ -1,10 +1,18 @@
 import { DexAggregatorService } from '../../services/dex-aggregator.service';
 
+process.env.DEX_SIMULATION_MODE = process.env.DEX_SIMULATION_MODE || 'true';
+if (!process.env.RUN_DEX_INTEGRATION_TESTS && process.env.DEX_SIMULATION_MODE === 'true') {
+  process.env.RUN_DEX_INTEGRATION_TESTS = 'true';
+}
+process.env.TON_MAINNET = process.env.TON_MAINNET || 'false';
+
 const runDexIntegrationTests = process.env.RUN_DEX_INTEGRATION_TESTS === 'true';
 const describeIfEnabled = runDexIntegrationTests ? describe : describe.skip;
 
 if (!runDexIntegrationTests) {
   console.warn('⚠️ Skipping Ston.fi integration tests (set RUN_DEX_INTEGRATION_TESTS=true to enable).');
+} else if (process.env.DEX_SIMULATION_MODE === 'true') {
+  console.log('🧪 Ston.fi integration tests running in simulation mode');
 }
 
 describeIfEnabled('Ston.fi Swap Integration Tests', () => {

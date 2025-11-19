@@ -41,7 +41,7 @@ A production-ready monorepo payment gateway enabling developers to accept Telegr
 - Smart contract swap execution (DeDust/Ston.fi on-chain calls)
 - P2P order matching engine
 - Webhook dispatcher with retry logic
-- Settlement processor
+- Settlement payout connectors (fiat gateway + banking rails)
 - Blockchain transaction polling
 
 See [PROJECT_STATUS.md](./docs/PROJECT_STATUS.md) for complete roadmap and 6-week completion timeline.
@@ -512,6 +512,28 @@ node packages/api/scripts/test-conversion.js
 # Test authentication
 node packages/api/scripts/test-auth.js
 ```
+
+#### DEX Simulation Mode
+
+Integration tests that hit DeDust/Ston.fi now default to a deterministic simulator so they can run inside CI without public DEX access. To force real network calls, disable the simulator and opt in explicitly:
+
+```bash
+DEX_SIMULATION_MODE=false RUN_DEX_INTEGRATION_TESTS=true npm run test --workspace=@tg-payment/core
+```
+
+With `DEX_SIMULATION_MODE=true` (default for tests) the swap suites still execute but rely on mocked rates, ensuring coverage without hitting centralized exchanges or TON RPCs.
+
+### Background Workers
+
+Deposit monitoring and settlement processing run in a lightweight worker backed by the new `manual_deposits` table. Launch it alongside the API once your `.env` contains the TON mnemonic and webhook secret:
+
+```bash
+npm run worker:monitor --workspace=@tg-payment/core
+```
+
+The worker boots the TON deposit monitor plus the settlement processor, emits `deposit.confirmed` / `settlement.completed` webhooks, and can be scaled horizontally because it relies on database row locks instead of in-memory state.
+
+> ℹ️ Need the full flow? See `docs/SETTLEMENT_FLOW.md` for the end-to-end deposit → settlement diagram, required environment variables, and the exact Jest suites we run to validate the worker stack.
 
 ### Database Management
 

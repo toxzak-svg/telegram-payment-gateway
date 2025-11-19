@@ -19,25 +19,25 @@ export interface AggregatedRate {
  * Rate Aggregator Service
  * 
  * Fetches exchange rates from multiple sources and calculates weighted average
- * Sources: CoinGecko, Binance, DexScreener, CoinMarketCap
+ * Sources: CoinGecko, DexScreener, CoinMarketCap
  */
 export class RateAggregatorService {
   private sources = {
     coingecko: 'https://api.coingecko.com/api/v3',
-    binance: 'https://api.binance.com/api/v3',
     dexscreener: 'https://api.dexscreener.com/latest/dex/tokens',
     coinmarketcap: process.env.CMC_API_KEY
       ? 'https://pro-api.coinmarketcap.com/v1'
       : null,
   };
 
-  // Weighted average configuration (favors more liquid sources)
+  // Weighted average configuration (favors on-chain liquidity)
   private weights = {
-    binance: 0.4, // Most liquid
-    dexscreener: 0.3, // Real DEX prices
-    coingecko: 0.2, // Aggregated
-    coinmarketcap: 0.1, // Reference
-  };
+    dexscreener: 0.4, // Real DEX prices
+    coingecko: 0.35, // Aggregated markets
+    coinmarketcap: 0.25, // Reference data
+  } as const;
+
+  private defaultWeight = 0.25;
 
   /**
    * Get aggregated exchange rate from multiple sources
@@ -54,15 +54,14 @@ export class RateAggregatorService {
 
     try {
       // Fetch from all sources in parallel
-      const [cgRate, binanceRate, dexRate, cmcRate] = await Promise.all([
+      const [cgRate, dexRate, cmcRate] = await Promise.all([
         this.getCoinGeckoRate(sourceCurrency, targetCurrency),
-        this.getBinanceRate(sourceCurrency, targetCurrency),
         this.getDexScreenerRate(sourceCurrency, targetCurrency),
         this.getCoinMarketCapRate(sourceCurrency, targetCurrency),
       ]);
 
       // Filter out null results
-      const rates: RateSource[] = [cgRate, binanceRate, dexRate, cmcRate].filter(
+      const rates: RateSource[] = [cgRate, dexRate, cmcRate].filter(
         (r): r is RateSource => r !== null
       );
 
@@ -73,17 +72,23 @@ export class RateAggregatorService {
       console.log('✅ Rates fetched:', rates);
 
       // Calculate weighted average
-      const weightedSum = rates.reduce((sum, rate) => {
-        const weight = this.weights[rate.source as keyof typeof this.weights] || 0.1;
-        return sum + rate.value * weight;
-      }, 0);
+      const { sum: weightedSum, weightSum } = rates.reduce(
+        (acc, rate) => {
+          const weight = this.weights[rate.source as keyof typeof this.weights] ?? this.defaultWeight;
+          return {
+            sum: acc.sum + rate.value * weight,
+            weightSum: acc.weightSum + weight,
+          };
+        },
+        { sum: 0, weightSum: 0 }
+      );
 
       // Calculate best (minimum) rate
       const bestRate = Math.min(...rates.map((r) => r.value));
 
       return {
         bestRate,
-        averageRate: weightedSum,
+        averageRate: weightSum > 0 ? weightedSum / weightSum : weightedSum,
         rates,
         sourceCurrency,
         targetCurrency,
@@ -123,36 +128,6 @@ export class RateAggregatorService {
       };
     } catch (error) {
       console.error('❌ CoinGecko fetch failed:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Fetch rate from Binance API
-   */
-  private async getBinanceRate(
-    source: string,
-    target: string
-  ): Promise<RateSource | null> {
-    try {
-      const symbol = `${source.toUpperCase()}${target.toUpperCase()}`;
-      const url = `${this.sources.binance}/ticker/price?symbol=${symbol}`;
-      
-      const response = await axios.get(url, { timeout: 5000 });
-      const rate = parseFloat(response.data.price);
-
-      if (!rate || isNaN(rate)) {
-        console.warn('⚠️ Binance: No rate data');
-        return null;
-      }
-
-      return {
-        source: 'binance',
-        value: rate,
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.error('❌ Binance fetch failed:', error);
       return null;
     }
   }

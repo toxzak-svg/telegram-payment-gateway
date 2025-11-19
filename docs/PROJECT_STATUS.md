@@ -1,6 +1,6 @@
 # Telegram Payment Gateway - Project Status & Completion Plan
 
-**Last Updated**: November 18, 2025  
+**Last Updated**: November 19, 2025  
 **Status**: MVP Complete - Production Ready with TODOs  
 **Version**: 2.0.0 (Fragment Removed, P2P/DEX Integrated)
 
@@ -17,66 +17,19 @@ A decentralized payment gateway for converting Telegram Stars → TON → Fiat u
 ## ✅ Completed Work (95% Complete)
 
 ### Phase 1: Core Infrastructure ✅
-- [x] Project structure (npm workspaces monorepo)
-- [x] Database schema (18 tables, migrations 001-009)
-- [x] TypeScript configuration (strict mode)
-- [x] Docker setup (PostgreSQL, Redis)
-- [x] Environment configuration
-- [x] Error handling framework
 
 ### Phase 2: Payment Processing ✅
-- [x] Telegram Bot API integration (TelegramService)
-- [x] Payment webhook handler (PaymentController)
-- [x] Payment state machine (pending → received → converting → settled)
-- [x] Fee calculation system (platform, telegram, TON, DEX fees)
-- [x] Payment model with database operations
 
 ### Phase 3: TON Blockchain Integration ✅
-- [x] TonWeb SDK integration (TonBlockchainService)
-- [x] Wallet creation & management (WalletManagerService)
-- [x] Deposit monitoring (blockchain polling)
-- [x] Transaction verification (10+ confirmations)
-- [x] Balance checking and custody wallet encryption
 
 ### Phase 4: Fragment Removal & P2P/DEX ✅
-- [x] Removed Fragment.com dependencies (279 lines deleted)
-- [x] Created DexAggregatorService (DeDust, Ston.fi integration)
-- [x] Created P2PLiquidityService (intelligent routing)
-- [x] Updated ConversionService (P2P/DEX logic)
-- [x] Updated FeeService (fragment→dex)
-- [x] Database migrations (008, 009) applied
-- [x] Type definitions updated (core, API, SDK)
-- [x] DEX Controller with 4 endpoints
-- [x] P2P order management (StarsP2PService)
 
 ### Phase 5: API Layer ✅
-- [x] Express server setup
-- [x] REST API endpoints (v1 routes)
-- [x] Authentication middleware (API key)
-- [x] Rate limiting
-- [x] CORS configuration
-- [x] Error middleware
-- [x] Controllers (Payment, Conversion, User, Admin, DEX, P2P)
 
 ### Phase 6: Dashboard ✅
-- [x] React 18 + TypeScript + Vite
-- [x] Authentication system (login/logout)
-- [x] Dashboard page (live stats, charts)
-- [x] Transactions page (search, filter, sort)
-- [x] Settings page (API key, webhooks)
-- [x] API integration (React Query)
-- [x] Loading states & error handling
-- [x] Toast notifications
-- [x] Production build successful
 
-### Phase 7: Background Workers 🟡 (70% Complete)
-- [x] Deposit monitoring worker
-- [x] Rate update worker (RateAggregator)
-- [ ] Webhook dispatcher with retry logic
-- [ ] Settlement processor
-- [ ] P2P order matching engine
+### Phase 7: Background Workers 🟡 (80% Complete)
 
----
 
 ## 🔴 Critical TODOs (Production Blockers)
 
@@ -85,7 +38,6 @@ A decentralized payment gateway for converting Telegram Stars → TON → Fiat u
 
 **Files to Update**:
 - `packages/core/src/services/dex-aggregator.service.ts` (lines 199, 217)
-
 **Tasks**:
 ```typescript
 // Current: Mock implementation
@@ -129,6 +81,9 @@ async executeSwap(provider, poolId, fromToken, toToken, amount, minReceive) {
 - DeDust V2 smart contract API documentation
 - Ston.fi router contract specifications
 - TON transaction signing & broadcasting guide
+
+**Testing Update**:
+- 🧪 Deterministic coverage is now available via `DEX_SIMULATION_MODE`; disable it and set `RUN_DEX_INTEGRATION_TESTS=true` to exercise real pools once outbound calls are allowed.
 
 ---
 
@@ -228,18 +183,21 @@ class WebhookDispatcher {
 
 ---
 
-### 4. Settlement Processor
-**Priority**: MEDIUM | **Effort**: 2 days
+### 4. Settlement Processor (Baseline ✅)
+**Priority**: MEDIUM | **Effort to Finalize**: 1 day
 
-**Files to Create**:
-- `packages/worker/src/settlement-processor.ts`
+Initial settlement automation now ships inside `packages/core/src/workers/deposit-settlement.worker.ts`. Running `npm run worker:monitor --workspace @tg-payment/core` will:
+- watch `manual_deposits` for TON confirmations (via `DepositMonitorService`)
+- auto-create settlement rows once conversions hit `completed`
+- mark settlements/ payments as `settled`
+- emit `settlement.completed` webhooks
 
-**Tasks**:
-- Process pending settlements
-- Batch process for efficiency
-- Update settlement status
-- Trigger payout to developer wallets
-- Record in fee_collections table
+**Remaining Tasks**:
+- Wire payouts to real fiat gateways (currently simulated `AUTO-SETTLED-*` ids)
+- Post settlements into `fee_collections` for accounting
+- Surface settlement queue metrics on the dashboard
+
+Reference: `docs/SETTLEMENT_FLOW.md` captures the worker commands, environment requirements, and Jest validation steps for this pipeline.
 
 ---
 

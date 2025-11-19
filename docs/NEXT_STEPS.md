@@ -2,7 +2,7 @@
 
 **Current Status**: 95% Complete | 5 Critical TODOs Remaining  
 **Estimated Time to Launch**: 6-7 weeks  
-**Last Updated**: November 18, 2025
+**Last Updated**: November 19, 2025
 
 ---
 
@@ -194,6 +194,8 @@
 **Priority**: MEDIUM | **Blocker**: NO (can launch without)
 
 **Objective**: Implement webhook dispatcher and settlement processor
+
+> **Update (Nov 19, 2025):** `manual_deposits` + conversion settlement metadata now live (migration `010`). `WalletManagerService` now writes deposit rows backed by `TonBlockchainService`, and `DepositMonitorService` + `SettlementService` run via `npm run worker:monitor --workspace @tg-payment/core`, emitting `deposit.confirmed` / `settlement.completed` webhooks. Remaining effort focuses on the dedicated webhook dispatcher worker and wiring real fiat payout connectors. See `docs/SETTLEMENT_FLOW.md` for validation steps.
 
 #### Part A: Webhook Dispatcher
 
