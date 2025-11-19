@@ -11,7 +11,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "clean": "rm -rf dist",
-    "worker:monitor": "ts-node src/workers/deposit-settlement.worker.ts"
+    "worker:monitor": "ts-node src/workers/deposit-settlement.worker.ts",
+    "worker:fees": "ts-node src/workers/fee-collection.worker.ts"
   },
   "dependencies": {
     "@ton/crypto": "^3.3.0",

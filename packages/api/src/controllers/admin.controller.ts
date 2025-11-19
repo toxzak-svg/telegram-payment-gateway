@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { v4 as uuid } from 'uuid';
-import { getDatabase, FeeService } from '@tg-payment/core';
+import { getDatabase, FeeService, AdminAnalyticsService } from '@tg-payment/core';
 
 export class AdminController {
   private static getServices() {
     const db = getDatabase();
     const feeService = new FeeService(db as any);
-    return { db, feeService };
+    const analyticsService = new AdminAnalyticsService(db as any);
+    return { db, feeService, analyticsService };
   }
 
   /**
@@ -15,9 +16,12 @@ export class AdminController {
   static async getStats(req: Request, res: Response) {
     const requestId = uuid();
     try {
+      const { analyticsService } = AdminController.getServices();
+      const stats = await analyticsService.getDashboardStats();
+
       return res.status(200).json({
         success: true,
-        stats: { totalUsers: 0, totalPayments: 0, totalConversions: 0 },
+        stats,
         requestId,
       });
     } catch (error: any) {
@@ -161,18 +165,18 @@ export class AdminController {
     const requestId = uuid();
 
     try {
-      const { feeService } = AdminController.getServices();
+      const { analyticsService } = AdminController.getServices();
       const { startDate, endDate } = req.query;
 
       const start = startDate
         ? new Date(startDate as string)
-        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
       const end = endDate
         ? new Date(endDate as string)
         : new Date();
 
-      const summary = await feeService.getRevenueSummary(start, end);
+      const summary = await analyticsService.getRevenueSummary(start, end);
 
       return res.status(200).json({
         success: true,
@@ -188,6 +192,45 @@ export class AdminController {
       return res.status(500).json({
         success: false,
         error: { code: 'SUMMARY_ERROR', message: error.message },
+        requestId,
+      });
+    }
+  }
+
+  /**
+   * GET /api/v1/admin/transactions/summary
+   */
+  static async getTransactionSummary(req: Request, res: Response) {
+    const requestId = uuid();
+
+    try {
+      const { analyticsService } = AdminController.getServices();
+      const { startDate, endDate } = req.query;
+
+      const start = startDate
+        ? new Date(startDate as string)
+        : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      const end = endDate
+        ? new Date(endDate as string)
+        : new Date();
+
+      const summary = await analyticsService.getTransactionSummary(start, end);
+
+      return res.status(200).json({
+        success: true,
+        summary,
+        dateRange: {
+          start: start.toISOString(),
+          end: end.toISOString(),
+        },
+        requestId,
+      });
+    } catch (error: any) {
+      console.error('❌ Get transaction summary error:', error);
+      return res.status(500).json({
+        success: false,
+        error: { code: 'TRANSACTION_SUMMARY_ERROR', message: error.message },
         requestId,
       });
     }

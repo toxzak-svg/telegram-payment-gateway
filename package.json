@@ -12,6 +12,8 @@
     "dev": "npm run dev --workspaces --if-present",
     "lint": "eslint . --ext .ts --fix",
     "format": "prettier --write \"**/*.{ts,json,md}\"",
+    "worker:fees": "npm run worker:fees -w @tg-payment/core",
+    "wallet:update": "node packages/core/scripts/update-platform-wallet.js",
     "migrate": "node database/migrate.js up",
     "migrate:status": "node database/migrate.js status",
     "migrate:reset": "node database/migrate.js reset",

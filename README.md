@@ -83,6 +83,29 @@ npm run dev
 
 API will be available at `http://localhost:3000`
 
+### Fee Collection Setup
+
+1. **Set the platform TON wallet** (used to sweep collected fees):
+
+   ```bash
+   npm run wallet:update EQxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   ```
+
+   Replace the placeholder with your custodial TON address (must start with `EQ` or `UQ`).
+
+2. **Launch the automated fee collector** once you deploy or have test payments flowing:
+
+   ```bash
+   npm run worker:fees
+   ```
+
+   This worker checks pending platform fees every hour and transfers the balance to the wallet you configured above. The worker requires `DATABASE_URL`, `TON_API_URL`, `TON_API_KEY`, and `TON_WALLET_MNEMONIC` to be present in `.env`.
+
+3. **Monitor revenue** using the admin endpoints:
+   - `GET /api/v1/admin/stats` – dashboard KPIs (revenue, merchants, success rate)
+   - `GET /api/v1/admin/revenue/summary?startDate=...&endDate=...`
+   - `GET /api/v1/admin/transactions/summary?startDate=...&endDate=...`
+
 ---
 
 ## 📋 Table of Contents
@@ -130,6 +153,13 @@ API will be available at `http://localhost:3000`
 - **Docker Support** — One-command development environment
 - **OpenAPI Docs** — Auto-generated API documentation
 - **Code Examples** — Sample implementations in multiple languages
+
+### 💹 Monetization & Analytics
+
+- **Automated Fee Sweeps** — Background worker aggregates platform fees and sends TON to your treasury wallet once thresholds are hit
+- **Configurable Fee Structure** — Tune platform, DEX, and network percentages directly via the admin config endpoint
+- **Revenue Dashboards** — `/admin/stats` and summary APIs power the React dashboard with real-time revenue, merchant, and success KPIs
+- **Collection History** — Fee collection records tracked in `fee_collections` for reconciliation and payouts
 
 ---
 

@@ -28,7 +28,10 @@ A decentralized payment gateway for converting Telegram Stars → TON → Fiat u
 
 ### Phase 6: Dashboard ✅
 
-### Phase 7: Background Workers 🟡 (80% Complete)
+### Phase 7: Background Workers 🟡 (90% Complete)
+- ✅ **Fee Collection Worker** — Automated TON sweeps via `npm run worker:fees`
+- ✅ **Revenue Analytics Service** — `/admin/stats`, `/admin/revenue/summary`, `/admin/transactions/summary`
+- ⏳ Webhook dispatcher + retry queue
 
 
 ## 🔴 Critical TODOs (Production Blockers)

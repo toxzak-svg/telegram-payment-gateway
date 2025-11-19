@@ -17,6 +17,7 @@ export { DexAggregatorService } from './services/dex-aggregator.service';
 export { P2PLiquidityService } from './services/p2p-liquidity.service';
 export { FeeService } from './services/fee.service';
 export { FeeCollectionService } from './services/fee-collection.service';
+export { AdminAnalyticsService } from './services/admin-analytics.service';
 export { RateAggregatorService } from './services/rate.aggregator';
 export { PaymentService } from './services/payment.service';
 export { WebhookService } from './services/webhook.service';

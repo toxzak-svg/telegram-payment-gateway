@@ -37,6 +37,7 @@ router.get('/admin/stats', authenticate, AdminController.getStats);
 router.get('/admin/users', authenticate, AdminController.getUsers);
 router.get('/admin/revenue', authenticate, AdminController.getRevenue);
 router.get('/admin/revenue/summary', authenticate, AdminController.getRevenueSummary);
+router.get('/admin/transactions/summary', authenticate, AdminController.getTransactionSummary);
 router.get('/admin/config', authenticate, AdminController.getConfig);
 router.put('/admin/config', authenticate, AdminController.updateConfig);
 

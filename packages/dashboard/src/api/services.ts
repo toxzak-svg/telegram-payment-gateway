@@ -3,12 +3,13 @@ import {
   Payment,
   Conversion,
   User,
-  Stats,
+  DashboardStats,
   P2POrder,
   DexQuote,
   LiquiditySource,
   WebhookEvent,
-  ChartData,
+  RevenueSummaryEntry,
+  TransactionSummaryEntry,
   ApiResponse,
 } from '../types';
 
@@ -93,25 +94,36 @@ export const userService = {
 };
 
 export const statsService = {
-  async getDashboardStats(): Promise<Stats> {
-    const { data } = await apiClient.get<ApiResponse<Stats>>('/admin/stats');
-    return data.data;
+  async getDashboardStats(): Promise<DashboardStats> {
+    const { data } = await apiClient.get<{ success: boolean; stats: DashboardStats }>(
+      '/admin/stats'
+    );
+
+    return data.stats;
   },
 
-  async getRevenueChart(days: number = 7): Promise<ChartData[]> {
-    const { data } = await apiClient.get<ApiResponse<ChartData[]>>(
-      '/admin/charts/revenue',
-      { params: { days } }
-    );
-    return data.data;
+  async getRevenueSummary(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<RevenueSummaryEntry[]> {
+    const { data } = await apiClient.get<{
+      success: boolean;
+      summary: RevenueSummaryEntry[];
+    }>('/admin/revenue/summary', { params });
+
+    return data.summary;
   },
 
-  async getTransactionChart(days: number = 7): Promise<ChartData[]> {
-    const { data } = await apiClient.get<ApiResponse<ChartData[]>>(
-      '/admin/charts/transactions',
-      { params: { days } }
-    );
-    return data.data;
+  async getTransactionSummary(params?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<TransactionSummaryEntry[]> {
+    const { data } = await apiClient.get<{
+      success: boolean;
+      summary: TransactionSummaryEntry[];
+    }>('/admin/transactions/summary', { params });
+
+    return data.summary;
   },
 };
 

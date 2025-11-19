@@ -42,15 +42,31 @@ export interface User {
   updatedAt: string;
 }
 
-export interface Stats {
-  totalRevenue: number;
+export interface DashboardStats {
+  totalRevenueTon: number;
+  totalRevenueStars: number;
   totalTransactions: number;
-  activeUsers: number;
+  totalPayments: number;
+  totalUsers: number;
+  activeMerchants: number;
   successRate: number;
   revenueChange: number;
   transactionChange: number;
-  userChange: number;
+  activeMerchantsChange: number;
   successRateChange: number;
+}
+
+export interface RevenueSummaryEntry {
+  date: string;
+  tonAmount: number;
+  starsAmount: number;
+  total: number;
+}
+
+export interface TransactionSummaryEntry {
+  date: string;
+  total: number;
+  completed: number;
 }
 
 export interface P2POrder {

@@ -21,7 +21,6 @@ The Telegram Payment Gateway is a monorepo-based microservices architecture buil
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Runtime** | Node.js 18+ | JavaScript runtime |
 | **Language** | TypeScript 5.x | Type-safe development |
 | **API Framework** | Express.js | REST API server |
 | **Database** | PostgreSQL 15 | Persistent data storage |
@@ -72,12 +71,7 @@ text
 
 ### Package Structure
 
-telegram-payment-gateway/
-├── packages/
-│ ├── api/ # REST API server
-│ │ ├── src/
 │ │ │ ├── controllers/ # Request handlers
-│ │ │ ├── middleware/ # Auth, rate limit, etc.
 │ │ │ ├── routes/ # API routes
 │ │ │ ├── db/ # Database connection
 │ │ │ └── index.ts # Entry point
