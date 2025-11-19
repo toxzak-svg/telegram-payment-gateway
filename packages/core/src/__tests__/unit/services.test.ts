@@ -1,7 +1,6 @@
 import { TelegramService } from '../../services/Telegram.service';
 import { RateAggregatorService } from '../../services/rate.aggregator';
 import PaymentRepository from '../../models/payment.repository';
-import { FragmentService } from '../../services/fragment.service';
 
 describe('TelegramService', () => {
   let service: TelegramService;
@@ -144,39 +143,3 @@ describe('PaymentRepository', () => {
   });
 });
 
-describe('FragmentService', () => {
-  let service: FragmentService;
-
-  beforeEach(async () => {
-    service = new FragmentService('EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT');
-  });
-
-  test('should initialize with wallet address', () => {
-    expect(service).toBeDefined();
-  });
-
-  test('should fail conversion below minimum', async () => {
-    // Fragment service requires minimum 1000 Stars
-    try {
-      const result = await service.convertStarsToTON(
-        ['pay-1'],
-        { lockedRateDuration: 60 }
-      );
-      // Should fail because aggregateStars returns less than 1000
-      expect(result.status).toBe('failed');
-    } catch (err: any) {
-      // Expected to throw or return failed status
-      expect(err.message).toBeDefined();
-    }
-  });
-
-  test('should generate conversion with rate lock', async () => {
-    const result = await service.convertStarsToTON(
-      ['pay-1', 'pay-2', 'pay-3', 'pay-4'],
-      { lockedRateDuration: 60 }
-    );
-    // With 4 payments * 500 stars each = 2000 stars (above minimum of 1000)
-    expect(result).toBeDefined();
-    expect(result.starsAmount).toBeGreaterThanOrEqual(1000);
-  });
-});

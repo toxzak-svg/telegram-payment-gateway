@@ -3,9 +3,13 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "../../",
-    "composite": true
+    "composite": true,
+    "baseUrl": "../..",
+    "paths": {
+      "@tg-payment/core": ["packages/core/src"]
+    }
   },
-  "include": ["src/**/*", "../core/src/**/*"],
+  "include": ["src/**/*"],
   "references": [
     { "path": "../core" }
   ]

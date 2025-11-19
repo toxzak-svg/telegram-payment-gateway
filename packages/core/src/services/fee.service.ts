@@ -5,6 +5,8 @@ import { Pool } from 'pg';
 export interface PlatformConfig {
   platformFeePercentage: number;
   dexFeePercentage: number;
+  dexSlippageTolerance: number;
+  preferredDexProvider: 'dedust' | 'stonfi' | 'auto';
   networkFeePercentage: number;
   platformTonWallet: string;
   minConversionAmount: number;
@@ -49,6 +51,8 @@ export class FeeService {
       `SELECT
         platform_fee_percentage,
         dex_fee_percentage,
+        dex_slippage_tolerance,
+        preferred_dex_provider,
         network_fee_percentage,
         platform_ton_wallet,
         min_conversion_amount
@@ -65,6 +69,11 @@ export class FeeService {
     this.config = {
       platformFeePercentage: parseFloat(row.platform_fee_percentage),
       dexFeePercentage: parseFloat(row.dex_fee_percentage),
+      dexSlippageTolerance: parseFloat(row.dex_slippage_tolerance ?? 0),
+      preferredDexProvider: (row.preferred_dex_provider || 'dedust') as
+        | 'dedust'
+        | 'stonfi'
+        | 'auto',
       networkFeePercentage: parseFloat(row.network_fee_percentage),
       platformTonWallet: row.platform_ton_wallet,
       minConversionAmount: row.min_conversion_amount,

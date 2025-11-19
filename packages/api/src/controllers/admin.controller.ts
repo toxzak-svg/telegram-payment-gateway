@@ -207,7 +207,10 @@ export class AdminController {
         success: true,
         config: {
           platformFeePercentage: `${(config.platformFeePercentage * 100).toFixed(2)}%`,
-          fragmentFeePercentage: `${(config.fragmentFeePercentage * 100).toFixed(2)}%`,
+          dexFeePercentage: `${(config.dexFeePercentage * 100).toFixed(2)}%`,
+          fragmentFeePercentage: `${(config.dexFeePercentage * 100).toFixed(2)}%`,
+          dexSlippageTolerance: `${(config.dexSlippageTolerance * 100).toFixed(2)}%`,
+          preferredDexProvider: config.preferredDexProvider,
           networkFeePercentage: `${(config.networkFeePercentage * 100).toFixed(2)}%`,
           platformTonWallet: config.platformTonWallet,
           minConversionAmount: config.minConversionAmount,
@@ -235,6 +238,9 @@ export class AdminController {
       const {
         platformFeePercentage,
         fragmentFeePercentage,
+        dexFeePercentage,
+        dexSlippageTolerance,
+        preferredDexProvider,
         networkFeePercentage,
         platformTonWallet,
         minConversionAmount,
@@ -249,9 +255,22 @@ export class AdminController {
         values.push(parseFloat(platformFeePercentage) / 100);
       }
 
-      if (fragmentFeePercentage !== undefined) {
-        updates.push(`fragment_fee_percentage = $${paramIndex++}`);
-        values.push(parseFloat(fragmentFeePercentage) / 100);
+      const normalizedDexFee =
+        dexFeePercentage ?? fragmentFeePercentage;
+
+      if (normalizedDexFee !== undefined) {
+        updates.push(`dex_fee_percentage = $${paramIndex++}`);
+        values.push(parseFloat(normalizedDexFee) / 100);
+      }
+
+      if (dexSlippageTolerance !== undefined) {
+        updates.push(`dex_slippage_tolerance = $${paramIndex++}`);
+        values.push(parseFloat(dexSlippageTolerance) / 100);
+      }
+
+      if (preferredDexProvider) {
+        updates.push(`preferred_dex_provider = $${paramIndex++}`);
+        values.push(preferredDexProvider);
       }
 
       if (networkFeePercentage !== undefined) {

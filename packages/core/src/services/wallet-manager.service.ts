@@ -1,4 +1,4 @@
-import { initDatabase, getDatabase, Database } from '../db/connection';
+import { initDatabase, Database } from '../db/connection';
 import TonPaymentService from './ton-payment.service';
 import EncryptionUtil from '../utils/encryption.util';
 
@@ -8,25 +8,62 @@ export interface DepositInfo {
   expectedAmount: number;
   expiresAt: Date;
   paymentLink: string;
+  minConfirmations: number;
+}
+
+export interface WalletManagerServiceOptions {
+  db?: Database;
+  databaseUrl?: string;
+  tonService?: TonPaymentService;
+  encryption?: EncryptionUtil;
+  mnemonic?: string;
+  tonEndpoint?: string;
+  tonApiKey?: string;
+  minConfirmations?: number;
 }
 
 export class WalletManagerService {
   private db: Database;
   private tonService: TonPaymentService;
   private encryption: EncryptionUtil;
+  private mnemonic: string;
+  private minConfirmations?: number;
 
-  constructor() {
-    const conn = process.env.DATABASE_URL || '';
-    if (!conn) throw new Error('DATABASE_URL is required');
-    this.db = initDatabase(conn);
+  constructor(options: WalletManagerServiceOptions = {}) {
+    if (options.db) {
+      this.db = options.db;
+    } else {
+      const connectionString = options.databaseUrl || process.env.DATABASE_URL;
+      if (!connectionString) {
+        throw new Error('DATABASE_URL is required');
+      }
+      this.db = initDatabase(connectionString);
+    }
 
-    this.tonService = new TonPaymentService({
-      endpoint: process.env.TON_API_ENDPOINT || '',
-      apiKey: process.env.TON_API_KEY,
-      mnemonic: process.env.TON_WALLET_MNEMONIC || ''
-    });
+    this.mnemonic = options.mnemonic || process.env.TON_WALLET_MNEMONIC || '';
+    if (!this.mnemonic) {
+      throw new Error('TON_WALLET_MNEMONIC is required');
+    }
 
-    this.encryption = new EncryptionUtil(process.env.WALLET_ENCRYPTION_KEY || '');
+    this.tonService =
+      options.tonService ||
+      new TonPaymentService({
+        endpoint: options.tonEndpoint || process.env.TON_API_ENDPOINT || '',
+        apiKey: options.tonApiKey || process.env.TON_API_KEY,
+        mnemonic: this.mnemonic,
+        workchain: process.env.TON_WORKCHAIN
+          ? parseInt(process.env.TON_WORKCHAIN, 10)
+          : undefined,
+      });
+
+    if (options.encryption) {
+      this.encryption = options.encryption;
+    } else {
+      const encryptionKey = process.env.WALLET_ENCRYPTION_KEY || '';
+      this.encryption = new EncryptionUtil(encryptionKey);
+    }
+
+    this.minConfirmations = options.minConfirmations;
   }
 
   /**
@@ -41,7 +78,7 @@ export class WalletManagerService {
     const existing = await this.db.oneOrNone('SELECT * FROM wallets WHERE wallet_address = $1', [address]);
     let walletId: string;
     if (!existing) {
-      const encrypted = this.encryption.encrypt(process.env.TON_WALLET_MNEMONIC || '');
+      const encrypted = this.encryption.encrypt(this.mnemonic);
       const res = await this.db.one(
         `INSERT INTO wallets (user_id, wallet_address, wallet_type, public_key, encrypted_private_key, balance_ton, is_active, created_at, updated_at)
          VALUES ($1,$2,$3,$4,$5,0,true,NOW(),NOW()) RETURNING id`,
@@ -60,7 +97,14 @@ export class WalletManagerService {
       [userId, walletId, paymentId, expectedAmount, address, expiresAt]
     );
 
-    const paymentLink = this.tonService.getWalletAddress();
+    const minConfirmations = this.getMinConfirmations();
+    let paymentLink: string;
+    try {
+      paymentLink = this.tonService.generatePaymentLink(expectedAmount);
+    } catch {
+      const amountNano = Math.max(Math.floor(expectedAmount * 1e9), 0);
+      paymentLink = `ton://transfer/${address}?amount=${amountNano}`;
+    }
 
     // Start simple polling monitor (non-blocking)
     this.startDepositPoll(deposit.id, address, expectedAmount);
@@ -71,7 +115,17 @@ export class WalletManagerService {
       expectedAmount,
       expiresAt,
       paymentLink,
+      minConfirmations,
     };
+  }
+
+  private getMinConfirmations(): number {
+    if (typeof this.minConfirmations === 'number') {
+      return this.minConfirmations;
+    }
+    const envValue = process.env.TON_MIN_CONFIRMATIONS;
+    const parsed = envValue ? parseInt(envValue, 10) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
   }
 
   private async startDepositPoll(depositId: string, address: string, expectedAmount: number) {

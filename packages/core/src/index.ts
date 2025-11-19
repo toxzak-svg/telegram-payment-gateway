@@ -13,6 +13,8 @@ export { TelegramService } from './services/Telegram.service';
 export { DirectConversionService } from './services/direct-conversion.service';
 export { TonPaymentService } from './services/ton-payment.service';
 export { TonBlockchainService } from './services/ton-blockchain.service';
+export { DexAggregatorService } from './services/dex-aggregator.service';
+export { P2PLiquidityService } from './services/p2p-liquidity.service';
 export { FeeService } from './services/fee.service';
 export { FeeCollectionService } from './services/fee-collection.service';
 export { RateAggregatorService } from './services/rate.aggregator';
@@ -84,6 +86,7 @@ export {
   Database,
   initDatabase,
   getDatabase,
+  getPool,
   closeDatabase
 } from './db/connection';
 

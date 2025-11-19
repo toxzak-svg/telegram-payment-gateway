@@ -1,5 +1,5 @@
 import WalletManagerService from '../../services/wallet-manager.service';
-import TonBlockchainService from '../../services/ton-blockchain.service';
+import TonPaymentService from '../../services/ton-payment.service';
 import EncryptionUtil from '../../utils/encryption.util';
 
 describe('WalletManagerService', () => {
@@ -9,12 +9,11 @@ describe('WalletManagerService', () => {
       one: jest.fn(),
     } as any;
 
-    const mockTonService: jest.Mocked<Partial<TonBlockchainService>> = {
-      initializeWallet: jest.fn().mockResolvedValue({
-        address: 'EQCwalletaddress',
-        publicKey: 'public-key',
-      }),
+    const mockTonService: jest.Mocked<Partial<TonPaymentService>> = {
+      initializeWallet: jest.fn().mockResolvedValue(undefined),
+      getWalletAddress: jest.fn().mockReturnValue('EQCwalletaddress'),
       generatePaymentLink: jest.fn().mockReturnValue('ton://transfer/EQCwalletaddress?amount=12300000000'),
+      checkIncomingPayments: jest.fn().mockResolvedValue(false),
     };
 
     const mockEncryption: Partial<EncryptionUtil> = {
@@ -41,12 +40,15 @@ describe('WalletManagerService', () => {
 
     const service = new WalletManagerService({
       db: mockDb,
-      tonService: mockTonService as unknown as TonBlockchainService,
+      tonService: mockTonService as unknown as TonPaymentService,
       encryption: mockEncryption as EncryptionUtil,
       mnemonic: 'word '.repeat(24).trim(),
+      minConfirmations: 2,
     });
 
-    process.env.TON_MIN_CONFIRMATIONS = '2';
+    jest
+      .spyOn<any, any>(service as any, 'startDepositPoll')
+      .mockResolvedValue(undefined);
 
     const result = await service.createDepositAddress('user-1', 'payment-1', 12.34);
 
@@ -69,10 +71,14 @@ describe('WalletManagerService', () => {
 
     const service = new WalletManagerService({
       db: mockDb,
-      tonService: mockTonService as unknown as TonBlockchainService,
+      tonService: mockTonService as unknown as TonPaymentService,
       encryption: mockEncryption as EncryptionUtil,
       mnemonic: 'word '.repeat(24).trim(),
     });
+
+    jest
+      .spyOn<any, any>(service as any, 'startDepositPoll')
+      .mockResolvedValue(undefined);
 
     await service.createDepositAddress('user-1', 'payment-1', 1);
     await service.createDepositAddress('user-1', 'payment-2', 2);

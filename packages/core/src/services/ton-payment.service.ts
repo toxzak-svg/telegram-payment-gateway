@@ -134,6 +134,19 @@ export class TonPaymentService {
   }
 
   /**
+   * Generate a deeplink for TON wallets
+   */
+  generatePaymentLink(amountTon: number, memo?: string): string {
+    const address = this.getWalletAddress();
+    const amountNano = Math.max(Math.floor(amountTon * 1e9), 0);
+    let link = `ton://transfer/${address}?amount=${amountNano}`;
+    if (memo) {
+      link += `&text=${encodeURIComponent(memo)}`;
+    }
+    return link;
+  }
+
+  /**
    * Verify transaction exists on blockchain
    */
   async verifyTransaction(txHash: string): Promise<boolean> {
