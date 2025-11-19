@@ -1,0 +1,83 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: telegram-payment-gateway-db
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: POSTGRES_USER
+        value: tg_user
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: tg_payment_gateway
+
+  # Redis Cache
+  - type: redis
+    name: telegram-payment-gateway-redis
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+
+  # API Service
+  - type: web
+    name: telegram-payment-gateway-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build && chmod +x render-build.sh && ./render-build.sh
+    startCommand: node packages/api/dist/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: telegram-payment-gateway-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: telegram-payment-gateway-redis
+          property: connectionString
+      - key: PORT
+        value: 3000
+      - key: PLATFORM_TON_WALLET
+        value: UQABzHv6ODc8RIthqZePq96MSAVwvPL1-VuIePTnEXDi0jTP
+      - key: TON_API_URL
+        value: https://toncenter.com/api/v2/jsonRPC
+      - key: TON_MAINNET
+        value: false
+      - key: DEX_SLIPPAGE_TOLERANCE
+        value: 0.5
+      - key: MIN_CONVERSION_STARS
+        value: 100
+      - key: RATE_LOCK_DURATION_SECONDS
+        value: 300
+      - key: API_SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TON_WALLET_MNEMONIC
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TON_API_KEY
+        sync: false
+      - key: COINGECKO_API_KEY
+        sync: false
+      - key: COINMARKETCAP_API_KEY
+        sync: false
+      - key: WALLET_ENCRYPTION_KEY
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
+
+databases:
+  - name: telegram-payment-gateway-db
+    databaseName: tg_payment_gateway
+    user: tg_user
+    plan: free
+    region: oregon
