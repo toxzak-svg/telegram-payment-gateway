@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Unified payment processing for Telegram Stars \u2192 TON \u2192 Fiat conversions",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "workspaces": [
     "packages/*"
   ],
