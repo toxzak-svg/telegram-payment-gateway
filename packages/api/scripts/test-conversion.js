@@ -121,7 +121,7 @@ async function testConversionFlow() {
       `${API_URL}/conversions/${conversionId}/status`
     );
     console.log('✅ Status:', statusResponse.data.conversion.status);
-    console.log('   Fragment TX:', statusResponse.data.conversion.fragmentTxId || 'pending');
+    console.log('   DEX TX:', statusResponse.data.conversion.dexTxHash || 'pending');
     console.log('   TON TX:', statusResponse.data.conversion.tonTxHash || 'pending');
 
     // 7. List all conversions

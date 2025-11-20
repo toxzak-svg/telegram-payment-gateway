@@ -12,7 +12,7 @@ INSERT INTO users (
 
 -- Insert common exchange rates (will be updated by background job)
 INSERT INTO exchange_rates (source_currency, target_currency, rate, source_provider) VALUES
-  ('STARS', 'TON', 0.013, 'fragment'),
+  ('STARS', 'TON', 0.013, 'dedust'),
   ('TON', 'USD', 5.50, 'coingecko'),
   ('TON', 'EUR', 5.00, 'kraken'),
   ('TON', 'GBP', 4.35, 'kraken')

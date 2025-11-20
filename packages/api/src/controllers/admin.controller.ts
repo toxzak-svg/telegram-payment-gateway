@@ -251,7 +251,6 @@ export class AdminController {
         config: {
           platformFeePercentage: `${(config.platformFeePercentage * 100).toFixed(2)}%`,
           dexFeePercentage: `${(config.dexFeePercentage * 100).toFixed(2)}%`,
-          fragmentFeePercentage: `${(config.dexFeePercentage * 100).toFixed(2)}%`,
           dexSlippageTolerance: `${(config.dexSlippageTolerance * 100).toFixed(2)}%`,
           preferredDexProvider: config.preferredDexProvider,
           networkFeePercentage: `${(config.networkFeePercentage * 100).toFixed(2)}%`,
@@ -280,7 +279,6 @@ export class AdminController {
       const { db } = AdminController.getServices();
       const {
         platformFeePercentage,
-        fragmentFeePercentage,
         dexFeePercentage,
         dexSlippageTolerance,
         preferredDexProvider,
@@ -298,12 +296,9 @@ export class AdminController {
         values.push(parseFloat(platformFeePercentage) / 100);
       }
 
-      const normalizedDexFee =
-        dexFeePercentage ?? fragmentFeePercentage;
-
-      if (normalizedDexFee !== undefined) {
+      if (dexFeePercentage !== undefined) {
         updates.push(`dex_fee_percentage = $${paramIndex++}`);
-        values.push(parseFloat(normalizedDexFee) / 100);
+        values.push(parseFloat(dexFeePercentage) / 100);
       }
 
       if (dexSlippageTolerance !== undefined) {

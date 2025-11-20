@@ -41,7 +41,7 @@ async function testFeeSystem() {
     const configResponse = await axios.get(`${API_URL}/admin/config`);
     console.log('✅ Platform config:');
     console.log('   Platform Fee:', configResponse.data.config.platformFeePercentage);
-    console.log('   Fragment Fee:', configResponse.data.config.fragmentFeePercentage);
+    console.log('   DEX Fee:', configResponse.data.config.dexFeePercentage);
     console.log('   Network Fee:', configResponse.data.config.networkFeePercentage);
     console.log('   Platform Wallet:', configResponse.data.config.platformTonWallet);
     console.log('   Min Conversion:', configResponse.data.config.minConversionAmount, 'Stars');
@@ -93,7 +93,7 @@ async function testFeeSystem() {
     console.log('   Exchange Rate:', quote.exchangeRate);
     console.log('\n   Fee Breakdown:');
     console.log('   - Platform Fee:', quote.fees.platform, `STARS (${quote.fees.platformPercentage}%)`);
-    console.log('   - Fragment Fee:', quote.fees.fragment, 'STARS');
+    console.log('   - DEX Fee:', quote.fees.dex, 'STARS');
     console.log('   - Network Fee:', quote.fees.network, 'STARS');
     console.log('   - Total Fees:', quote.fees.total, 'STARS');
     console.log('\n   Platform Wallet:', quote.platformWallet);

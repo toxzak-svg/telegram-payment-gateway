@@ -69,7 +69,7 @@ tonEquivalent: 4.95,
 exchangeRate: 0.00099,
 fees: {
 telegram: 50,
-fragment: 25,
+dex: 25,
 total: 75
 }
 }

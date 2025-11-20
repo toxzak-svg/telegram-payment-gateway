@@ -63,7 +63,7 @@ export class ReconciliationService {
   }
 
   /**
-   * Reconcile conversion against Fragment and TON blockchain
+   * Reconcile conversion against DEX and TON blockchain
    */
   async reconcileConversion(conversionId: string): Promise<ReconciliationRecord> {
     // Get conversion from database
@@ -79,7 +79,7 @@ export class ReconciliationService {
     const conversion = conversionResult.rows[0];
     const expectedAmount = conversion.target_amount;
 
-    // TODO: Query Fragment API and TON blockchain for actual amount
+    // TODO: Query DEX API and TON blockchain for actual amount
     const actualAmount = expectedAmount; // Placeholder
     const difference = Math.abs(expectedAmount - actualAmount);
 

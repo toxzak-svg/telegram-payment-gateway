@@ -8,7 +8,7 @@ ON CONFLICT DO NOTHING;
 -- Sample exchange rates
 INSERT INTO exchangerates (id, sourcecurrency, targetcurrency, rate, source)
 VALUES
-  (gen_random_uuid(), 'STARS', 'TON', 0.0013, 'fragment'),
+  (gen_random_uuid(), 'STARS', 'TON', 0.0013, 'dedust'),
   (gen_random_uuid(), 'TON', 'USD', 2.45, 'coingecko'),
   (gen_random_uuid(), 'TON', 'EUR', 2.28, 'coingecko')
 ON CONFLICT DO NOTHING;
