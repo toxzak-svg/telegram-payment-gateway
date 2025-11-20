@@ -2,11 +2,11 @@
   "name": "@tg-payment/api",
   "version": "0.1.0",
   "description": "REST API for Telegram Payment Gateway",
-  "main": "dist/packages/api/src/index.js",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc --build",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "start": "node dist/packages/api/src/index.js",
+    "start": "node dist/server.js",
     "test": "jest --passWithNoTests",
     "clean": "rm -rf dist"
   },

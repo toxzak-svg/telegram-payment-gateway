@@ -113,7 +113,7 @@ services:
     env: node
     plan: starter
     buildCommand: npm ci && npm run build:backend
-    startCommand: npm run start -w @tg-payment/api
+    startCommand: node packages/api/dist/server.js
     preDeployCommand: npm run migrate
     healthCheckPath: /health
     envVarGroups:

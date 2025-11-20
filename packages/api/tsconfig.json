@@ -2,13 +2,13 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "../../",
+    "rootDir": "./src",
     "composite": true,
-    "baseUrl": "../..",
+    "baseUrl": ".",
     "module": "commonjs",
     "moduleResolution": "node",
     "paths": {
-      "@tg-payment/core": ["packages/core/src"]
+      "@tg-payment/core": ["../core/src"]
     },
     "sourceMap": false,
     "removeComments": true,

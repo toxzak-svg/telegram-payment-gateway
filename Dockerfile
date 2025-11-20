@@ -46,6 +46,7 @@ COPY --from=builder /app/packages/core/package.json ./packages/core/
 COPY --from=builder /app/packages/api/dist ./packages/api/dist
 COPY --from=builder /app/packages/api/package.json ./packages/api/
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/database ./database
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -59,4 +60,4 @@ EXPOSE 3000
 # Use tini for proper signal handling
 ENTRYPOINT ["/sbin/tini", "--"]
 
-CMD ["node", "packages/api/dist/server.js"]
+CMD ["node", "packages/api/dist/index.js"]
