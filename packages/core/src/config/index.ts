@@ -30,6 +30,18 @@ export const config = {
     jwtSecret: process.env.JWT_SECRET || '',
     webhookSecret: process.env.WEBHOOK_SECRET || '',
   },
+
+  fiatConnectors: {
+    kraken: {
+      apiKey: process.env.KRAKEN_API_KEY || '',
+      apiSecret: process.env.KRAKEN_API_SECRET || '',
+    },
+    coinlist: {
+      apiKey: process.env.COINLIST_API_KEY || '',
+      apiSecret: process.env.COINLIST_API_SECRET || '',
+      baseUrl: process.env.COINLIST_BASE_URL || 'https://trade-api.coinlist.co',
+    },
+  },
   
   logging: {
     level: process.env.LOG_LEVEL || 'info',

@@ -5,6 +5,7 @@ import compression from 'compression';
 import globalLimiter from './middleware/ratelimit.middleware';
 import { errorHandler } from './middleware/error.middleware';
 import v1Routes from './routes/v1.routes';
+import './db/connection';
 
 export function createServer(): Application {
   const app = express();

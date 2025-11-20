@@ -1,3 +1,109 @@
+envVarGroups:
+  - name: shared-runtime
+    envVars:
+      # Runtime Configuration
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 20.11.0
+      
+      # TON Blockchain Configuration
+      - key: TON_API_URL
+        value: https://toncenter.com/api/v2/jsonRPC
+      - key: TON_MAINNET
+        value: "true"
+      - key: TON_WORKCHAIN
+        value: "0"
+      
+      # P2P DEX Integration
+      - key: DEDUST_API_URL
+        value: https://api.dedust.io
+      - key: STONFI_API_URL
+        value: https://api.ston.fi
+      - key: DEX_SLIPPAGE_TOLERANCE
+        value: "0.5"
+      
+      # Conversion Settings
+      - key: MIN_CONVERSION_STARS
+        value: "100"
+      - key: RATE_LOCK_DURATION_SECONDS
+        value: "300"
+      - key: MAX_PENDING_CONVERSIONS
+        value: "10"
+      - key: P2P_POOL_REFRESH_INTERVAL
+        value: "30"
+      
+      # Platform Wallet (REQUIRED: Set in Render Dashboard)
+      # This is where collected fees are sent
+      # Format: EQxxxxxxxxxx (TON address starting with EQ or UQ)
+      - key: PLATFORM_TON_WALLET
+        sync: false
+      
+      # Database Connection Pool
+      - key: DATABASE_POOL_MIN
+        value: "2"
+      - key: DATABASE_POOL_MAX
+        value: "10"
+  - name: shared-secrets
+    envVars:
+      # ===================================================================
+      # CRITICAL SECRETS - MUST BE SET BEFORE DEPLOYMENT
+      # Generate using: openssl rand -hex 32
+      # See: docs/RENDER_ENV_SETUP.md for detailed setup instructions
+      # ===================================================================
+      
+      # TON Blockchain Credentials (REQUIRED)
+      # Generate wallet: npm run generate:wallet
+      # Format: "word1 word2 word3 ... word24" (24 words with spaces)
+      - key: TON_WALLET_MNEMONIC
+        sync: false
+      
+      # Get from: https://toncenter.com or https://tonapi.io
+      - key: TON_API_KEY
+        sync: false
+      
+      # Telegram Bot Configuration (REQUIRED)
+      # Get from: @BotFather on Telegram
+      # Format: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      
+      # Generate: openssl rand -hex 32
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      
+      # Security Keys (REQUIRED)
+      # Generate each with: openssl rand -hex 32
+      # IMPORTANT: Use different keys for each variable
+      - key: API_SECRET_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: WALLET_ENCRYPTION_KEY
+        sync: false
+      
+      # Exchange Rate APIs (OPTIONAL but recommended)
+      # Get free tier from: https://www.coingecko.com/en/api
+      - key: COINGECKO_API_KEY
+        sync: false
+      
+      # Get free tier from: https://coinmarketcap.com/api/
+      - key: COINMARKETCAP_API_KEY
+        sync: false
+      
+      # Fiat Settlement Connectors (OPTIONAL - only if using off-ramps)
+      # Get from: https://www.kraken.com/u/security/api
+      - key: KRAKEN_API_KEY
+        sync: false
+      - key: KRAKEN_API_SECRET
+        sync: false
+      
+      # Get from: https://coinlist.co/settings/api
+      - key: COINLIST_API_KEY
+        sync: false
+      - key: COINLIST_API_SECRET
+        sync: false
+
 services:
   # --------------------------------------------------------------------------------
   # API Service
@@ -6,13 +112,14 @@ services:
     name: telegram-payment-api
     env: node
     plan: starter
-    buildCommand: npm install --production=false && npm run build:backend --include-workspace-root
-    startCommand: cd packages/api && npm start
+    buildCommand: npm ci && npm run build:backend
+    startCommand: npm run start -w @tg-payment/api
+    preDeployCommand: npm run migrate
+    healthCheckPath: /health
+    envVarGroups:
+      - shared-runtime
+      - shared-secrets
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: 20.11.0
       - key: DATABASE_URL
         fromDatabase:
           name: tg-payment-db
@@ -24,20 +131,6 @@ services:
           property: connectionString
       - key: PORT
         value: 10000
-      - key: TON_WALLET_MNEMONIC
-        sync: false
-      - key: TON_API_KEY
-        sync: false
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: TELEGRAM_WEBHOOK_SECRET
-        sync: false
-      - key: API_SECRET_KEY
-        sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: WALLET_ENCRYPTION_KEY
-        sync: false
     autoDeploy: false
 
   # --------------------------------------------------------------------------------
@@ -47,13 +140,12 @@ services:
     name: worker-deposit-monitor
     env: node
     plan: starter
-    buildCommand: npm install --production=false && npm run build:backend --include-workspace-root
+    buildCommand: npm ci && npm run build:backend
     startCommand: node packages/core/dist/workers/deposit-settlement.worker.js
+    envVarGroups:
+      - shared-runtime
+      - shared-secrets
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: 20.11.0
       - key: DATABASE_URL
         fromDatabase:
           name: tg-payment-db
@@ -63,12 +155,6 @@ services:
           type: redis
           name: tg-payment-redis
           property: connectionString
-      - key: TON_WALLET_MNEMONIC
-        sync: false
-      - key: TON_API_KEY
-        sync: false
-      - key: WALLET_ENCRYPTION_KEY
-        sync: false
 
   # --------------------------------------------------------------------------------
   # Background Worker: Fee Collection
@@ -77,13 +163,12 @@ services:
     name: worker-fee-collection
     env: node
     plan: starter
-    buildCommand: npm install --production=false && npm run build:backend --include-workspace-root
+    buildCommand: npm ci && npm run build:backend
     startCommand: node packages/core/dist/workers/fee-collection.worker.js
+    envVarGroups:
+      - shared-runtime
+      - shared-secrets
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: 20.11.0
       - key: DATABASE_URL
         fromDatabase:
           name: tg-payment-db
@@ -93,12 +178,6 @@ services:
           type: redis
           name: tg-payment-redis
           property: connectionString
-      - key: TON_WALLET_MNEMONIC
-        sync: false
-      - key: TON_API_KEY
-        sync: false
-      - key: WALLET_ENCRYPTION_KEY
-        sync: false
 
   # --------------------------------------------------------------------------------
   # Redis Service

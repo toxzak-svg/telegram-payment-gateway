@@ -35,7 +35,7 @@ export class DexRetryHandler {
       DexErrorCode.TRANSACTION_TIMEOUT,
     ]
   ): Promise<T> {
-    let lastError: Error;
+    let lastError: Error = new Error('Operation failed with no error details');
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
@@ -61,7 +61,7 @@ export class DexRetryHandler {
       }
     }
 
-    throw lastError!;
+    throw lastError;
   }
 
   private delay(ms: number): Promise<void> {

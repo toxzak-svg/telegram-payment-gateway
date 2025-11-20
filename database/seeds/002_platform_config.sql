@@ -22,7 +22,7 @@ INSERT INTO platform_config (
     0.0010,  -- 0.1% network fee
     0.0050,  -- 0.5% slippage tolerance
     'dedust', -- Preferred DEX: dedust, stonfi, or auto
-    'ENTER_YOUR_TON_WALLET_ADDRESS_HERE', -- ⚠️ REPLACE WITH YOUR TON WALLET
+    'UQABzHv6ODc8RIthqZePq96MSAVwvPL1-VuIePTnEXDi0jTP', -- Platform TON wallet
     1000,    -- Minimum 1000 Stars per conversion
     1.0,     -- Collect fees when >= 1 TON accumulated
     true,

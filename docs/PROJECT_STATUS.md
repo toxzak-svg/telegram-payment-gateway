@@ -29,6 +29,7 @@ A decentralized payment gateway for converting Telegram Stars → TON → Fiat u
 ### Phase 6: Dashboard ✅
 
 ### Phase 7: Background Workers 🟡 (90% Complete)
+
 - ✅ **Fee Collection Worker** — Automated TON sweeps via `npm run worker:fees`
 - ✅ **Revenue Analytics Service** — `/admin/stats`, `/admin/revenue/summary`, `/admin/transactions/summary`
 - ⏳ Webhook dispatcher + retry queue
@@ -37,11 +38,15 @@ A decentralized payment gateway for converting Telegram Stars → TON → Fiat u
 ## 🔴 Critical TODOs (Production Blockers)
 
 ### 1. DEX Smart Contract Integration
+
 **Priority**: HIGH | **Effort**: 2-3 days
 
 **Files to Update**:
+
 - `packages/core/src/services/dex-aggregator.service.ts` (lines 199, 217)
+
 **Tasks**:
+
 ```typescript
 // Current: Mock implementation
 async executeSwap(provider, poolId, fromToken, toToken, amount, minReceive) {
@@ -81,23 +86,28 @@ async executeSwap(provider, poolId, fromToken, toToken, amount, minReceive) {
 ```
 
 **Documentation Needed**:
+
 - DeDust V2 smart contract API documentation
 - Ston.fi router contract specifications
 - TON transaction signing & broadcasting guide
 
 **Testing Update**:
+
 - 🧪 Deterministic coverage is now available via `DEX_SIMULATION_MODE`; disable it and set `RUN_DEX_INTEGRATION_TESTS=true` to exercise real pools once outbound calls are allowed.
 
 ---
 
 ### 2. P2P Order Matching Engine
+
 **Priority**: HIGH | **Effort**: 3-4 days
 
 **Files to Update**:
+
 - `packages/core/src/services/p2p-liquidity.service.ts` (line 208)
 - `packages/core/src/services/stars-p2p.service.ts` (line 125)
 
 **Tasks**:
+
 ```typescript
 // Current: Placeholder
 await this.p2pService.createBuyOrder(user_id, tonAmount, rate);
@@ -143,12 +153,15 @@ class P2PMatchingEngine {
 ---
 
 ### 3. Webhook Dispatcher with Retry
+
 **Priority**: MEDIUM | **Effort**: 1-2 days
 
 **Files to Create**:
+
 - `packages/worker/src/webhook-dispatcher.ts`
 
 **Tasks**:
+
 ```typescript
 class WebhookDispatcher {
   async dispatch(event: WebhookEvent) {
@@ -187,15 +200,18 @@ class WebhookDispatcher {
 ---
 
 ### 4. Settlement Processor (Baseline ✅)
+
 **Priority**: MEDIUM | **Effort to Finalize**: 1 day
 
 Initial settlement automation now ships inside `packages/core/src/workers/deposit-settlement.worker.ts`. Running `npm run worker:monitor --workspace @tg-payment/core` will:
+
 - watch `manual_deposits` for TON confirmations (via `DepositMonitorService`)
 - auto-create settlement rows once conversions hit `completed`
 - mark settlements/ payments as `settled`
 - emit `settlement.completed` webhooks
 
 **Remaining Tasks**:
+
 - Wire payouts to real fiat gateways (currently simulated `AUTO-SETTLED-*` ids)
 - Post settlements into `fee_collections` for accounting
 - Surface settlement queue metrics on the dashboard
@@ -205,12 +221,15 @@ Reference: `docs/SETTLEMENT_FLOW.md` captures the worker commands, environment r
 ---
 
 ### 5. Blockchain Transaction Polling
+
 **Priority**: MEDIUM | **Effort**: 1 day
 
 **Files to Update**:
+
 - `packages/core/src/services/conversion.service.ts` (line 326)
 
 **Tasks**:
+
 ```typescript
 async pollConversionStatus(conversionId: string, txHash: string) {
   const maxPolls = 60; // 5 minutes (5s intervals)
@@ -242,9 +261,11 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 ## 🟡 Important TODOs (Non-blocking)
 
 ### 6. Redis Caching
+
 **Priority**: LOW | **Effort**: 1 day
 
 **Files to Update**:
+
 - `packages/core/src/services/rate.aggregator.ts` (line 282)
 
 **Current**: In-memory Map cache  
@@ -253,9 +274,11 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 ---
 
 ### 7. Database Integration in TelegramService
+
 **Priority**: LOW | **Effort**: 1 day
 
 **Files to Update**:
+
 - `packages/core/src/services/Telegram.service.ts` (lines 117, 130, 150)
 
 **Tasks**: Replace console.log with actual PaymentModel.create() calls
@@ -263,9 +286,11 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 ---
 
 ### 8. Reconciliation Service Completion
+
 **Priority**: LOW | **Effort**: 1 day
 
 **Files to Update**:
+
 - `packages/core/src/services/reconciliation.service.ts` (line 82)
 
 **Tasks**: Remove Fragment API references, add TON blockchain verification
@@ -275,6 +300,7 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 ## 📋 Feature Enhancements (Post-MVP)
 
 ### Dashboard Phase 4-6
+
 - [ ] P2P Orders page
 - [ ] DEX Analytics page
 - [ ] Webhooks event log page
@@ -286,6 +312,7 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 - [ ] Mobile responsive improvements
 
 ### API Enhancements
+
 - [ ] GraphQL endpoint (optional)
 - [ ] Bulk operations API
 - [ ] Webhook event filtering
@@ -293,6 +320,7 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 - [ ] Rate limit tiers
 
 ### Monitoring & Analytics
+
 - [ ] Prometheus metrics
 - [ ] Grafana dashboards
 - [ ] Error tracking (Sentry)
@@ -300,6 +328,7 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 - [ ] Audit log viewer
 
 ### Security Enhancements
+
 - [ ] API key rotation policy
 - [ ] IP whitelisting
 - [ ] 2FA for dashboard
@@ -311,6 +340,7 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 ## 🚀 Deployment Checklist
 
 ### Pre-Production
+
 - [ ] Complete critical TODOs (#1-5)
 - [ ] Security audit
 - [ ] Load testing (JMeter/k6)
@@ -321,6 +351,7 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 - [ ] Monitoring setup
 
 ### Production Setup
+
 - [ ] Domain & SSL certificates
 - [ ] Cloud provider setup (AWS/GCP/Azure)
 - [ ] Database (Managed PostgreSQL)
@@ -331,6 +362,7 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 - [ ] Staging environment
 
 ### Launch
+
 - [ ] Deploy API
 - [ ] Deploy Dashboard
 - [ ] Deploy Workers
@@ -345,6 +377,7 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 ## 📊 Project Metrics
 
 ### Codebase
+
 - **Total Lines**: ~15,000
 - **TypeScript**: 95%
 - **Test Coverage**: 60% (target: 80%)
@@ -352,18 +385,21 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 - **Dependencies**: Secure (no critical vulnerabilities)
 
 ### Database
+
 - **Tables**: 18
 - **Migrations**: 9
 - **Indexes**: 47
 - **Constraints**: 23
 
 ### API
+
 - **Endpoints**: 28
 - **Controllers**: 6
 - **Middleware**: 5
 - **Services**: 15
 
 ### Performance Targets
+
 - **API Response**: <200ms (p95)
 - **Dashboard Load**: <2s
 - **Transaction Processing**: <30s
@@ -414,6 +450,7 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 ## 📚 Documentation Status
 
 ### Complete ✅
+
 - [x] README.md (comprehensive overview)
 - [x] ARCHITECTURE.md (system design)
 - [x] API.md (endpoint documentation)
@@ -422,12 +459,14 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 - [x] DEVELOPMENT.md (setup guide)
 
 ### Needs Update 🟡
+
 - [ ] FRAGMENT_REMOVAL_PLAN.md (archive or remove)
 - [ ] FRAGMENT_REMOVAL_QUICK_REF.md (archive or remove)
 - [ ] API.md (add new DEX/P2P endpoints)
 - [ ] INTEGRATION_GUIDE.md (update with P2P examples)
 
 ### To Create 📝
+
 - [ ] DEPLOYMENT.md (production deployment guide)
 - [ ] TESTING.md (testing strategy & guide)
 - [ ] SECURITY.md (security best practices)
@@ -439,18 +478,21 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 ## 💡 Recommendations
 
 ### Technical Debt
+
 1. **Convert remaining Pool to Database types** - Standardize database client across all services
 2. **Add comprehensive test suite** - Target 80% coverage before production
 3. **Refactor error codes** - Centralize error code definitions
 4. **Optimize database queries** - Add query performance monitoring
 
 ### Infrastructure
+
 1. **Set up staging environment** - Mirror production for testing
 2. **Implement blue-green deployment** - Zero-downtime updates
 3. **Add database replication** - Read replicas for scalability
 4. **Configure CDN** - Serve dashboard assets faster
 
 ### Developer Experience
+
 1. **Create SDK examples** - More code samples for integration
 2. **Build CLI tool** - Command-line interface for testing
 3. **Interactive API docs** - Swagger UI or Postman collection
@@ -461,18 +503,21 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 ## 📞 Support & Maintenance
 
 ### Monitoring
+
 - API health checks every 60s
 - Database connection pool monitoring
 - Worker queue depth tracking
 - Error rate alerting (>1% threshold)
 
 ### Backup Strategy
+
 - Database: Daily full backup, hourly incremental
 - Configuration: Version controlled
 - Logs: 30-day retention
 - Disaster recovery: 4-hour RTO, 1-hour RPO
 
 ### Maintenance Windows
+
 - Deployments: Tuesday/Thursday 2-4 AM UTC
 - Database updates: Monthly, scheduled
 - Security patches: As needed (emergency)

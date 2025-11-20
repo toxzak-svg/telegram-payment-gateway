@@ -86,6 +86,7 @@ export {
 export {
   Database,
   initDatabase,
+  initPool,
   getDatabase,
   getPool,
   closeDatabase

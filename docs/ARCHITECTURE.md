@@ -295,11 +295,13 @@ text
 ### Authentication
 
 **API Key Format:**
+
 - Public keys: `pk_` + 48 hex chars
 - Secret keys: `sk_` + 64 hex chars
 - Generated using crypto.randomBytes()
 
 **Storage:**
+
 - Keys stored in plaintext (no hashing needed for API keys)
 - User passwords: Not implemented (API-only service)
 
@@ -319,6 +321,7 @@ text
 **Implementation:** In-memory store (upgrade to Redis for production)
 
 **Limits by Endpoint Type:**
+
 - Registration: 10 req/min
 - Standard API: 60 req/min
 - Webhooks: 100 req/min
@@ -329,6 +332,7 @@ text
 ### Security Headers
 
 Using Helmet.js for:
+
 - Content Security Policy
 - DNS Prefetch Control
 - Frame Guard
@@ -373,12 +377,14 @@ text
 ### Vertical Scaling
 
 **Database Optimization:**
+
 - 36 indexes for fast queries
 - Connection pooling (20 connections)
 - Prepared statements
 - JSONB for flexible data
 
 **API Performance:**
+
 - Compression enabled
 - Keep-alive connections
 - Streaming for large responses
@@ -404,6 +410,7 @@ console.log() with structured data
 text
 
 **Production Recommendations:**
+
 - Winston or Pino for structured logging
 - Log aggregation (ELK stack, Datadog)
 - Error tracking (Sentry)
@@ -411,18 +418,21 @@ text
 ### Metrics to Track
 
 **Application:**
+
 - Request rate (per endpoint)
 - Response times (p50, p95, p99)
 - Error rates
 - Authentication failures
 
 **Business:**
+
 - Payments processed
 - Conversion success rate
 - Total volume (Stars, TON)
 - User growth
 
 **Infrastructure:**
+
 - CPU/Memory usage
 - Database connections
 - Query performance
@@ -437,6 +447,7 @@ GET /api/v1/health (planned)
 text
 
 **Production:**
+
 - Database connectivity check
 - External service availability
 - Disk space check

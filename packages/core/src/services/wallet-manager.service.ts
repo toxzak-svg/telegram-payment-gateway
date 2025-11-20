@@ -28,6 +28,7 @@ export class WalletManagerService {
   private encryption: EncryptionUtil;
   private mnemonic: string;
   private minConfirmations?: number;
+  private walletInitialized = false;
 
   constructor(options: WalletManagerServiceOptions = {}) {
     if (options.db) {
@@ -70,8 +71,11 @@ export class WalletManagerService {
    * Create or reuse a custody wallet and return deposit info
    */
   async createDepositAddress(userId: string, paymentId: string, expectedAmount: number): Promise<DepositInfo> {
-    // Ensure TON wallet initialized
-    await this.tonService.initializeWallet();
+    // Ensure TON wallet initialized once
+    if (!this.walletInitialized) {
+      await this.tonService.initializeWallet();
+      this.walletInitialized = true;
+    }
     const address = this.tonService.getWalletAddress();
 
     // Upsert wallet record (simple SQL)
@@ -137,15 +141,21 @@ export class WalletManagerService {
           // Update deposit record to awaiting_confirmation
           await this.db.none('UPDATE manual_deposits SET status = $1, received_amount_ton = $2, confirmed_at = NOW() WHERE id = $3', ['awaiting_confirmation', expectedAmount, depositId]);
           clearInterval(interval);
+          return;
         }
         // Expire if past deadline
         const dep: any = await this.db.oneOrNone('SELECT * FROM manual_deposits WHERE id = $1', [depositId]);
         if (dep && new Date(dep.expires_at) < new Date()) {
           await this.db.none('UPDATE manual_deposits SET status = $1 WHERE id = $2', ['expired', depositId]);
           clearInterval(interval);
+          return;
         }
       } catch (err) {
         console.error('Error monitoring deposit:', err);
+        // Clear interval on persistent errors to prevent memory leak
+        clearInterval(interval);
+        // Mark deposit as failed
+        await this.db.none('UPDATE manual_deposits SET status = $1 WHERE id = $2', ['failed', depositId]).catch(console.error);
       }
     }, 30000);
   }

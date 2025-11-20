@@ -71,29 +71,33 @@ export class DexAggregatorService {
       return; // Already initialized
     }
 
-    if (this.isSimulationMode()) {
-      this.keyPair = {
-        publicKey: Buffer.alloc(32),
-        secretKey: Buffer.alloc(64)
-      };
-      this.wallet = WalletContractV4.create({
-        workchain: 0,
-        publicKey: this.keyPair.publicKey,
-      });
-      console.log('🧪 DEX simulator wallet initialized');
-      return;
-    }
-
     const mnemonic = process.env.TON_WALLET_MNEMONIC;
-    if (!mnemonic) {
+    const requiresMnemonic = !this.isSimulationMode() || process.env.RUN_DEX_INTEGRATION_TESTS === 'true';
+
+    if (requiresMnemonic && (!mnemonic || mnemonic.trim().split(' ').length < 12)) {
       throw new DexError(
         DexErrorCode.WALLET_NOT_INITIALIZED,
         'TON_WALLET_MNEMONIC not set in environment variables'
       );
     }
 
+    const mnemonicToUse = mnemonic && mnemonic.trim().length > 0
+      ? mnemonic
+      : 'test '.repeat(24).trim();
+
+    if (this.isSimulationMode()) {
+      const keyPair = await mnemonicToPrivateKey(mnemonicToUse.split(' '));
+      this.keyPair = keyPair;
+      this.wallet = WalletContractV4.create({
+        workchain: 0,
+        publicKey: keyPair.publicKey,
+      });
+      console.log('🧪 DEX simulator wallet initialized');
+      return;
+    }
+
     try {
-      this.keyPair = await mnemonicToPrivateKey(mnemonic.split(' '));
+      this.keyPair = await mnemonicToPrivateKey(mnemonicToUse.split(' '));
       this.wallet = WalletContractV4.create({
         workchain: 0,
         publicKey: this.keyPair.publicKey,
@@ -654,20 +658,29 @@ export class DexAggregatorService {
     amount: number,
     minOutput: number
   ): SwapResult {
-    if (!poolId || !poolId.startsWith('EQ')) {
+    const requiresPoolId = provider === 'dedust';
+    if (requiresPoolId && (!poolId || !poolId.startsWith('EQ'))) {
       throw new DexError(
         DexErrorCode.POOL_NOT_FOUND,
-        `Pool ${poolId} not recognized in simulator`
+        `POOL_NOT_FOUND: Pool ${poolId} not recognized in simulator`
       );
     }
 
     const mockRate = provider === 'dedust' ? 2.1 : 2.04;
     const outputAmount = parseFloat((amount * mockRate).toFixed(6));
 
+    if (amount > 1000) {
+      throw new DexError(
+        DexErrorCode.INSUFFICIENT_FUNDS,
+        'INSUFFICIENT_FUNDS: Simulated wallet balance too low',
+        { amount }
+      );
+    }
+
     if (outputAmount < minOutput) {
       throw new DexError(
         DexErrorCode.SLIPPAGE_EXCEEDED,
-        `Simulated output ${outputAmount} below minimum ${minOutput}`,
+        `SLIPPAGE_EXCEEDED: Simulated output ${outputAmount} below minimum ${minOutput}`,
         { provider, mockRate }
       );
     }

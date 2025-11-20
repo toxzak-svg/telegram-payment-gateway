@@ -1,7 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { PaymentModel, FeeService, PaymentStatus } from '@tg-payment/core';
 import { getDatabase } from '@tg-payment/core';
+import type { Database } from '@tg-payment/core';
+import { pool } from '../db/connection';
 import { TelegramService } from '@tg-payment/core';
+import { validate as validateUuid, v5 as uuidv5 } from 'uuid';
+
+const USER_ID_NAMESPACE = '3b9d87a2-54d7-4878-9d87-351edcb2564b';
 
 export class PaymentController {
   /**
@@ -28,17 +33,20 @@ export class PaymentController {
         return;
       }
 
+      const normalizedUserId = PaymentController.normalizeUserId(userId);
+
       const db = getDatabase();
+      await PaymentController.ensureUserExists(db, normalizedUserId);
       const paymentModel = new PaymentModel(db);
       const telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN!, {
         paymentModel,
-        resolveUserId: () => userId,
+        resolveUserId: () => normalizedUserId,
         allowedCurrencies: ['XTR'],
         minStarsAmount: parseInt(process.env.MIN_CONVERSION_STARS || '100', 10),
       });
 
       console.log('📥 Webhook received:', {
-        userId,
+        userId: normalizedUserId,
         hasPayment: !!payload.message?.successful_payment,
       });
 
@@ -53,7 +61,7 @@ export class PaymentController {
 
         // 💰 CALCULATE AND CREATE PLATFORM FEES
         try {
-          const feeService = new FeeService(db as any);
+          const feeService = new FeeService(pool);
           await feeService.calculateFeesForPayment(payment.id);
           console.log('💰 Platform fee created for payment:', payment.id);
         } catch (feeError: any) {
@@ -157,14 +165,17 @@ export class PaymentController {
         return;
       }
 
+      const normalizedUserId = PaymentController.normalizeUserId(userId);
+
       const db = getDatabase();
+      await PaymentController.ensureUserExists(db, normalizedUserId);
       const paymentModel = new PaymentModel(db);
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
       const offset = (page - 1) * limit;
       const status = req.query.status as PaymentStatus | undefined;
 
-      const { payments, total } = await paymentModel.listByUser(userId, {
+      const { payments, total } = await paymentModel.listByUser(normalizedUserId, {
         limit,
         offset,
         status
@@ -210,9 +221,12 @@ export class PaymentController {
         return;
       }
 
+      const normalizedUserId = PaymentController.normalizeUserId(userId);
+
       const db = getDatabase();
+      await PaymentController.ensureUserExists(db, normalizedUserId);
       const paymentModel = new PaymentModel(db);
-      const stats = await paymentModel.getStatsByUser(userId);
+      const stats = await paymentModel.getStatsByUser(normalizedUserId);
 
       res.status(200).json({
         success: true,
@@ -225,6 +239,35 @@ export class PaymentController {
     } catch (error) {
       next(error);
     }
+  }
+
+  private static normalizeUserId(userId: string): string {
+    if (validateUuid(userId)) {
+      return userId;
+    }
+
+    const derivedId = uuidv5(userId, USER_ID_NAMESPACE);
+    console.warn(`⚠️ Normalized non-UUID user id "${userId}" to deterministic uuid ${derivedId}`);
+    return derivedId;
+  }
+
+  private static async ensureUserExists(db: Database, userId: string): Promise<void> {
+    const suffix = userId.replace(/-/g, '').slice(0, 16) || userId;
+    const apiKey = `pk_${suffix}`;
+    const apiSecret = `sk_${suffix}`;
+
+    await db.none(
+      `INSERT INTO users (id, api_key, api_secret, app_name, description, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        userId,
+        apiKey,
+        apiSecret,
+        `Auto App ${suffix}`,
+        'Auto-provisioned via webhook'
+      ]
+    );
   }
 }
 
