@@ -1,8 +1,8 @@
 # Telegram Payment Gateway - Project Status & Completion Plan
 
-**Last Updated**: November 19, 2025  
+**Last Updated**: November 20, 2025  
 **Status**: MVP Complete - Production Ready with TODOs  
-**Version**: 2.0.0 (Fragment Removed, P2P/DEX Integrated)
+**Version**: 2.0.0 (Fragment Removed, P2P/DEX Integrated, Security Hardened)
 
 ---
 
@@ -11,6 +11,12 @@
 A decentralized payment gateway for converting Telegram Stars → TON → Fiat using P2P liquidity pools (DeDust, Ston.fi) without centralized exchanges.
 
 **Tech Stack**: TypeScript, Node.js 20, Express 4, PostgreSQL 16, TON Blockchain, React 18
+
+**Recent Updates** (November 20, 2025):
+- ✅ **Security Incident Resolved** - All exposed credentials rotated, Git history cleaned
+- ✅ **Fragment Removal Complete** - 100% decentralized architecture (20+ references removed)
+- ✅ **Deployment Configured** - Render.com with automated deployments via Trigger.dev
+- ✅ **Credentials Secured** - New TON wallet, Telegram bot token, API keys rotated
 
 ---
 

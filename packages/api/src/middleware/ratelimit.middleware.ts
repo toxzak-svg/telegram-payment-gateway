@@ -21,6 +21,8 @@ function createRateLimiter(options?: {
     },
     standardHeaders: true,
     legacyHeaders: false,
+    // Skip X-Forwarded-For validation in development
+    validate: { xForwardedForHeader: false },
   });
 }
 

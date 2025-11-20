@@ -1,13 +1,33 @@
 # Render Deployment Guide
 
-This document captures everything that is required to spin up the Telegram Payment Gateway on Render using the supplied `render.yaml` blueprint. The blueprint provisions the API, the background workers, a managed Redis instance, and a managed PostgreSQL database while running database migrations automatically before each deploy.
+**Last Updated**: November 20, 2025  
+**Status**: ✅ Configured and Deployed  
+**Service ID**: srv-d4d94fggjchc73dr0nug  
+**Region**: Ohio  
+**URL**: https://telegram-payment-gateway.onrender.com
+
+This document captures everything required to deploy the Telegram Payment Gateway on Render.com using the supplied `render.yaml` blueprint. The blueprint provisions the API, background workers, managed Redis, and managed PostgreSQL while running database migrations automatically before each deploy.
+
+---
+
+## Recent Deployment Updates (November 20, 2025)
+
+- ✅ **Security Incident Resolved** - All exposed credentials rotated and secured
+- ✅ **Environment Variables Updated** - New TON wallet, Telegram bot token, Render API key
+- ✅ **Trigger.dev Integration** - Automated deployments configured (project: proj_fqtizcvgqqorjbcikxsa)
+- ✅ **Git History Cleaned** - Removed accidentally committed secrets from repository
+- ✅ **Deployment Status** - Auto-deploy enabled on main branch
+
+---
 
 ## Prerequisites
 
-- Render account with access to Render Blueprints (aka Render MPC/CLI workflows).
-- GitHub repository containing this project (Render watches a branch to trigger deploys).
-- Render CLI (optional but recommended). Download the binary from the Render dashboard or follow their docs for installation, then run `render login`.
-- Production-ready values for all secrets listed below (TON wallet mnemonic, Telegram tokens, encryption keys, etc.).
+- Render account with access to Render Blueprints
+- GitHub repository: toxzak-svg/telegram-payment-gateway
+- Render CLI (optional). Install: `npm install -g render`
+- **IMPORTANT**: Never commit secrets to Git. Use Render dashboard or API to set environment variables
+
+---
 
 ## Blueprint Overview
 

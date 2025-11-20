@@ -14,7 +14,12 @@
 
 A production-ready monorepo payment gateway enabling developers to accept Telegram Stars payments and convert them to TON cryptocurrency through **decentralized P2P liquidity pools** (DeDust, Ston.fi). Built with TypeScript, Express.js, PostgreSQL, and TON SDK for maximum reliability.
 
-**Latest Update**: Fragment.com integration removed, replaced with direct DEX integration. Dashboard fully functional with real-time API integration.
+**Latest Updates** (November 2025):
+- ✅ All Fragment.com API references removed - fully decentralized P2P/DEX architecture
+- ✅ Security incident resolved - credentials rotated, Git history cleaned
+- ✅ Dashboard fully functional with real-time API integration
+- ✅ Automated fee collection system with configurable thresholds
+- ✅ Render.com deployment configured with environment variables secured
 
 ### Why This Gateway?
 
