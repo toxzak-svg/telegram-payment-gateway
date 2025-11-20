@@ -1,7 +1,7 @@
 {
   "name": "telegram-payment-gateway",
   "version": "0.1.0",
-  "description": "Unified payment processing for Telegram Stars \u2192 TON \u2192 Fiat conversions",
+  "description": "Unified payment processing for Telegram Stars → TON → Fiat conversions",
   "private": true,
   "engines": {
     "node": ">=20.0.0"
@@ -26,10 +26,13 @@
     "docker:build": "docker build -t tg-payment-gateway .",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "docker:logs": "docker-compose logs -f",
+    "trigger:dev": "npx trigger.dev@latest dev",
+    "trigger:deploy": "npx trigger.dev@latest deploy"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
+    "@trigger.dev/build": "^4.1.1",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/pg-promise": "^0.0.28",
@@ -48,6 +51,7 @@
   "dependencies": {
     "@ton/crypto": "^3.3.0",
     "@ton/ton": "^16.0.0",
+    "@trigger.dev/sdk": "^4.1.1",
     "dotenv": "^17.2.3",
     "pg": "^8.11.3",
     "pg-promise": "^12.2.0",

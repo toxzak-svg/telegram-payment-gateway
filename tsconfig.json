@@ -17,6 +17,10 @@
     "moduleResolution": "node",
     "allowJs": true
   },
-  "include": ["packages/api/src/**/*", "packages/core/src/**/*"],
+  "include": [
+    "packages/api/src/**/*",
+    "packages/core/src/**/*",
+    "trigger.config.ts"
+  ],
   "exclude": ["node_modules", "packages/dashboard"]
 }
