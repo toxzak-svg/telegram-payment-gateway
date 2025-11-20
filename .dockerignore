@@ -1,11 +1,60 @@
-node_modules
-npm-debug.log
-dist
+# Version control
 .git
 .gitignore
-README.md
+.gitattributes
+
+# Documentation
+*.md
+docs/
+LICENSE
+
+# CI/CD & Scripts
+.github/
+scripts/test-*.js
+scripts/generate-*.sh
+
+# Dependencies (reinstalled in container)
+node_modules
+
+# Build artifacts (rebuilt in container)
+dist
+build
+*.tsbuildinfo
+
+# Development
+.env.example
+.env.local
+.env.render
+npm-debug.log
+*.log
+
+# Testing
+coverage
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+jest.config.js
+
+# IDE
 .vscode
 .idea
-*.log
-coverage
+*.swp
+*.swo
+
+# Cache
+.cache
+.turbo
+.next
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Database
+*.db
+*.sqlite

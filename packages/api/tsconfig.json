@@ -9,7 +9,10 @@
     "moduleResolution": "node",
     "paths": {
       "@tg-payment/core": ["packages/core/src"]
-    }
+    },
+    "sourceMap": false,
+    "removeComments": true,
+    "incremental": true
   },
   "include": ["src/**/*"],
   "references": [

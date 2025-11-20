@@ -14,6 +14,7 @@
     "build:backend": "npm run build -w @tg-payment/core && npm run build -w @tg-payment/api",
     "test": "npm run test --workspaces --if-present",
     "dev": "npm run dev --workspaces --if-present",
+    "clean": "bash ./scripts/clean.sh",
     "lint": "eslint . --ext .ts --fix",
     "format": "prettier --write \"**/*.{ts,json,md}\"",
     "worker:fees": "npm run worker:fees -w @tg-payment/core",

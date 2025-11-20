@@ -3,7 +3,10 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true
+    "composite": true,
+    "sourceMap": false,
+    "removeComments": true,
+    "incremental": true
   },
   "include": ["src/**/*"],
   "exclude": ["src/__tests__/**/*"]
