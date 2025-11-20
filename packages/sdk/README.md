@@ -14,12 +14,10 @@ import TelegramPaymentGateway from '@tg-payment/sdk';
 
 // Initialize client
 const gateway = new TelegramPaymentGateway({
-apiKey: 'pk_your_api_key',
-apiSecret: 'sk_your_api_secret',
-apiUrl: 'https://api.yourgateway.com/v1', // optional
-});
-
-// Estimate conversion
+  apiKey: 'pk_your_api_key',
+  apiSecret: 'sk_your_api_secret',
+  apiUrl: '<https://api.yourgateway.com/v1>', // optional
+});// Estimate conversion
 const estimate = await gateway.estimateConversion({
 starsAmount: 5000,
 targetCurrency: 'TON',
@@ -128,7 +126,7 @@ text
 **Response:**
 {
 status: 'completed',
-conversion: { /* full conversion object */ },
+  conversion: { /* conversion object */ },
 progress: {
 phase: 'phase3_confirmed',
 percentage: 100,

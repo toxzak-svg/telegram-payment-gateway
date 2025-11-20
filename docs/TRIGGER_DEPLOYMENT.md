@@ -5,6 +5,7 @@ This guide explains how to use Trigger.dev to automate deployments to Render.com
 ## 📋 Overview
 
 Trigger.dev provides automated deployment workflows including:
+
 - **Manual deployments** via dashboard
 - **Scheduled deployments** (e.g., nightly builds)
 - **Webhook-triggered deployments** from GitHub
@@ -16,7 +17,7 @@ Trigger.dev provides automated deployment workflows including:
 
 ### 1. Prerequisites
 
-- Trigger.dev account (sign up at https://trigger.dev)
+- Trigger.dev account (sign up at <https://trigger.dev>)
 - Render.com API key
 - GitHub repository configured
 
@@ -68,6 +69,7 @@ Trigger a deployment manually from the Trigger.dev dashboard.
 ```
 
 **Use Cases:**
+
 - Quick hotfixes
 - Manual rollouts
 - Testing deployments

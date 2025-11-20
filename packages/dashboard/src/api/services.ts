@@ -68,8 +68,8 @@ export const conversionService = {
 
 export const userService = {
   async getProfile(): Promise<User> {
-    const { data } = await apiClient.get<ApiResponse<User>>('/user/profile');
-    return data.data;
+    const { data } = await apiClient.get<{ success: boolean; user: User }>('/users/me');
+    return data.user;
   },
 
   async updateWebhookUrl(webhookUrl: string): Promise<User> {

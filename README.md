@@ -1,4 +1,4 @@
-1²# Telegram Payment Gateway
+# Telegram Payment Gateway
 
 > **Decentralized P2P Payment Processing Gateway** — Convert Telegram Stars to TON cryptocurrency through P2P liquidity pools and DEX integration. No centralized exchanges, no KYC, truly permissionless.
 
@@ -15,6 +15,7 @@
 A production-ready monorepo payment gateway enabling developers to accept Telegram Stars payments and convert them to TON cryptocurrency through **decentralized P2P liquidity pools** (DeDust, Ston.fi). Built with TypeScript, Express.js, PostgreSQL, and TON SDK for maximum reliability.
 
 **Latest Updates** (November 2025):
+
 - ✅ All Fragment.com API references removed - fully decentralized P2P/DEX architecture
 - ✅ Security incident resolved - credentials rotated, Git history cleaned
 - ✅ Dashboard fully functional with real-time API integration
@@ -43,6 +44,7 @@ A production-ready monorepo payment gateway enabling developers to accept Telegr
 - ✅ Fee calculation system (4-component fee structure)
 
 **🔴 Critical TODOs** (5% remaining):
+
 - Smart contract swap execution (DeDust/Ston.fi on-chain calls)
 - P2P order matching engine
 - Webhook dispatcher with retry logic
@@ -172,8 +174,8 @@ API will be available at `http://localhost:3000`
 
 ### System Design
 
-```
-┌─────────────────────┐
+```text
+┌─────────────────────┌
 │   Telegram Bot      │
 │   (User Payment)    │
 └──────────┬──────────┘
@@ -256,7 +258,7 @@ telegram-payment-gateway/
 
 ### User Journey
 
-```
+```text
 1. User Pays with Telegram Stars
    ↓
 2. Telegram sends webhook to gateway
@@ -287,19 +289,22 @@ telegram-payment-gateway/
 ### Status State Machine
 
 **Payment States:**
-```
+
+```text
 pending → received → awaiting_ton → ton_pending → 
 ton_confirmed → converting → settled → completed
 ```
 
 **Conversion States:**
-```
+
+```text
 pending → rate_locked → awaiting_ton → ton_received → 
 converting_fiat → completed
 ```
 
 **Deposit States:**
-```
+
+```text
 pending → awaiting_confirmation → confirmed
 ```
 
@@ -387,7 +392,7 @@ curl -H "Authorization: Bearer pk_your_api_key" https://api.gateway.com/v1/payme
 
 #### User Management
 
-```
+```http
 POST   /v1/users/register        # Register & get API keys
 GET    /v1/users/me              # Get user profile
 PUT    /v1/users/settings        # Update settings
@@ -395,7 +400,7 @@ PUT    /v1/users/settings        # Update settings
 
 #### Payments
 
-```
+```http
 POST   /v1/payments/webhook      # Telegram payment webhook (no auth)
 GET    /v1/payments              # List payments
 GET    /v1/payments/:id          # Get payment details
@@ -403,7 +408,7 @@ GET    /v1/payments/:id          # Get payment details
 
 #### Conversions
 
-```
+```http
 POST   /v1/conversions/quote     # Get conversion quote from P2P pools
 POST   /v1/conversions           # Create conversion
 GET    /v1/conversions/:id       # Get conversion status
@@ -411,14 +416,14 @@ GET    /v1/conversions/:id       # Get conversion status
 
 #### Deposits
 
-```
+```http
 POST   /v1/deposits              # Create deposit address
 GET    /v1/deposits/:id          # Get deposit status
 ```
 
 #### Wallets
 
-```
+```http
 GET    /v1/wallets               # Get wallet balances
 GET    /v1/wallets/:id           # Get wallet details
 POST   /v1/wallets/withdraw      # Withdraw TON
@@ -427,6 +432,7 @@ POST   /v1/wallets/withdraw      # Withdraw TON
 ### Response Format
 
 **Success Response:**
+
 ```json
 {
   "success": true,
@@ -439,6 +445,7 @@ POST   /v1/wallets/withdraw      # Withdraw TON
 ```
 
 **Error Response:**
+
 ```json
 {
   "success": false,
@@ -609,11 +616,13 @@ docker-compose down
 ### Production Environment
 
 **Recommended Hosting:**
+
 - **API**: Railway, Render, or AWS ECS
 - **Database**: Managed PostgreSQL (AWS RDS, Railway, Supabase)
 - **Redis**: Upstash or AWS ElastiCache (for job queues)
 
 **Environment Checklist:**
+
 - [ ] Set `NODE_ENV=production`
 - [ ] Use strong `WALLET_ENCRYPTION_KEY` (32+ bytes)
 - [ ] Enable database SSL (`DATABASE_SSL=true`)
@@ -668,6 +677,7 @@ curl https://your-domain.com/api/v1/health
 ### Key Metrics
 
 **Business Metrics:**
+
 - Total payments processed
 - Conversion success rate
 - Average processing time
@@ -675,6 +685,7 @@ curl https://your-domain.com/api/v1/health
 - Total volume (Stars, TON, Fiat)
 
 **Technical Metrics:**
+
 - API response times (p50, p95, p99)
 - Error rates by endpoint
 - Database connection pool usage
@@ -723,7 +734,7 @@ We welcome contributions! Please follow these guidelines:
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```text
 feat: add new feature
 fix: bug fix
 docs: documentation changes
@@ -760,12 +771,14 @@ MIT License - see [LICENSE](./LICENSE) file for details
 ## 🗺️ Roadmap
 
 ### Phase 1: Core Infrastructure ✅
+
 - [x] Database schema & migrations
 - [x] TON blockchain integration
 - [x] Wallet management system
 - [x] Basic API endpoints
 
 ### Phase 2: P2P Liquidity (In Progress)
+
 - [x] DEX aggregator service
 - [x] DeDust protocol integration
 - [x] Ston.fi integration
@@ -773,6 +786,7 @@ MIT License - see [LICENSE](./LICENSE) file for details
 - [ ] Multi-pool liquidity discovery
 
 ### Phase 3: Advanced Features
+
 - [ ] Cross-chain bridges (ETH, BSC)
 - [ ] Limit orders for conversions
 - [ ] Advanced analytics dashboard
@@ -780,6 +794,7 @@ MIT License - see [LICENSE](./LICENSE) file for details
 - [ ] Automated market making
 
 ### Phase 4: Ecosystem
+
 - [ ] Developer marketplace
 - [ ] Liquidity provider incentives
 - [ ] Governance token (DAO)
