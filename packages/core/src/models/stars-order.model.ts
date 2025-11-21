@@ -91,12 +91,11 @@ export class StarsOrderModel {
   }
 
   async createAtomicSwap(data: AtomicSwap) {
-    const row = await this.db.one(
+    return this.db.one(
       `INSERT INTO atomic_swaps(sell_order_id, buy_order_id, smart_contract_address, ton_tx_hash, telegram_tx_id, status)
        VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,
       [data.sell_order_id, data.buy_order_id, data.smart_contract_address ?? null, data.ton_tx_hash ?? null, data.telegram_tx_id ?? null, data.status ?? 'pending']
     );
-    return row;
   }
 
   async markOrdersMatched(sellId: string, buyId: string) {

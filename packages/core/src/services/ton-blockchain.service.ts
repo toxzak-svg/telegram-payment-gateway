@@ -236,6 +236,22 @@ export class TonBlockchainService {
       // Search for transaction in list
       for (const tx of transactions) {
         if (tx.hash().toString('hex') === txHash) {
+          // Check transaction description for exit code
+          const { description } = tx;
+
+          // Verify transaction was successful
+          // Only exitCode === 0 indicates success
+          if (description && 'type' in description) {
+            const desc = description as any;
+            if (desc.type === 'generic') {
+              const exitCode = desc.computePhase?.exitCode;
+              if (exitCode !== undefined && exitCode !== 0) {
+                console.warn(`❌ Transaction ${txHash} failed with exit code ${exitCode}`);
+                return false;
+              }
+            }
+          }
+
           // Simplified: verify based on inclusion in transaction list
           // In production, check block height and confirmations
           return true;
