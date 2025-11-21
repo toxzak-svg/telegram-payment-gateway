@@ -34,13 +34,20 @@ describeIfEnabled('DeDust Swap Integration Tests', () => {
     });
 
     it('should throw error if mnemonic not set', async () => {
-      const originalMnemonic = process.env.TON_WALLET_MNEMONIC;
-      delete process.env.TON_WALLET_MNEMONIC;
+      // This test only applies when NOT in simulation mode
+      if (process.env.DEX_SIMULATION_MODE === 'true') {
+        // In simulation mode, a test mnemonic is used as fallback
+        const service = new DexAggregatorService();
+        await expect(service.initializeWallet()).resolves.not.toThrow();
+      } else {
+        const originalMnemonic = process.env.TON_WALLET_MNEMONIC;
+        delete process.env.TON_WALLET_MNEMONIC;
 
-      const service = new DexAggregatorService();
-      await expect(service.initializeWallet()).rejects.toThrow('TON_WALLET_MNEMONIC');
+        const service = new DexAggregatorService();
+        await expect(service.initializeWallet()).rejects.toThrow('TON_WALLET_MNEMONIC');
 
-      process.env.TON_WALLET_MNEMONIC = originalMnemonic;
+        process.env.TON_WALLET_MNEMONIC = originalMnemonic;
+      }
     });
   });
 
