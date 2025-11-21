@@ -133,6 +133,21 @@ DATABASE_URL=postgresql://tg_user:tg_pass@localhost:5432/tg_payment_dev
 
 These match the values in `.env.example` for consistency.
 
+## Validation
+
+To validate your Copilot setup configuration, run:
+
+```bash
+bash scripts/validate-copilot-setup.sh
+```
+
+This script checks:
+- ✅ Workflow file exists and has correct job name
+- ✅ Required setup steps are present
+- ✅ Instructions file exists and is under 1000 lines
+- ✅ YAML syntax is valid
+- ✅ Documentation exists
+
 ## Troubleshooting
 
 ### Copilot can't build the project
@@ -140,6 +155,7 @@ These match the values in `.env.example` for consistency.
 1. Check that `.github/workflows/copilot-setup-steps.yml` is on the default branch
 2. Verify the workflow runs successfully: Go to Actions tab → Copilot Setup Steps
 3. Update the workflow to include missing dependencies
+4. Run `bash scripts/validate-copilot-setup.sh` to check configuration
 
 ### Copilot isn't following instructions
 
