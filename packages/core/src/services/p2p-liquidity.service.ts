@@ -79,17 +79,18 @@ export class P2PLiquidityService {
 
       // DEX route (if available)
       if (dexQuote.status === 'fulfilled') {
+        const { provider, liquidity, fee } = dexQuote.value.bestPool;
         routes.push({
           sources: [{
             type: 'dex',
-            provider: dexQuote.value.bestPool.provider,
+            provider,
             rate: dexQuote.value.rate,
-            liquidity: dexQuote.value.bestPool.liquidity,
-            fee: dexQuote.value.bestPool.fee,
+            liquidity,
+            fee,
             executionTime: 30, // ~30 seconds
           }],
           totalRate: dexQuote.value.rate,
-          totalFee: dexQuote.value.bestPool.fee,
+          totalFee: fee,
           estimatedTime: 30,
           confidence: 0.98,
         });
@@ -308,12 +309,13 @@ export class P2PLiquidityService {
     try {
       // Get DEX quotes
       const dexQuote = await this.dexAggregator.getBestRate(fromCurrency, toCurrency, amount);
+      const { provider, liquidity, fee } = dexQuote.bestPool;
       sources.push({
         type: 'dex',
-        provider: dexQuote.bestPool.provider,
+        provider,
         rate: dexQuote.rate,
-        liquidity: dexQuote.bestPool.liquidity,
-        fee: dexQuote.bestPool.fee,
+        liquidity,
+        fee,
         executionTime: 30,
       });
     } catch (error) {
