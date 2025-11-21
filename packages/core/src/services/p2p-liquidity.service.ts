@@ -255,7 +255,7 @@ export class P2PLiquidityService {
       const { source_amount, source_currency, target_currency, rate: lockedRate } = conversion.rows[0];
 
       const bestQuote = await this.dexAggregator.getBestRate(source_currency, target_currency, source_amount);
-      const poolId = bestQuote.bestPool.poolId;
+      const {poolId} = bestQuote.bestPool;
       const slippageTolerance = 0.05; // 5%
       const minOutput = source_amount * bestQuote.rate * (1 - slippageTolerance);
 
