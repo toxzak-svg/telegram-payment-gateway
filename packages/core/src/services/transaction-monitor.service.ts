@@ -4,6 +4,7 @@ import TonBlockchainService from './ton-blockchain.service';
 export class TransactionMonitorService {
   private intervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
+  private isProcessing = false;
 
   constructor(
     private db: IDatabase<any>,
@@ -18,13 +19,24 @@ export class TransactionMonitorService {
     // Initial run
     await this.checkPendingTransactions();
 
-    this.intervalId = setInterval(() => {
-      this.checkPendingTransactions();
+    this.intervalId = setInterval(async () => {
+      if (this.isProcessing) {
+        console.log('⏭️ Skipping check - previous check still processing');
+        return;
+      }
+      
+      this.isProcessing = true;
+      try {
+        await this.checkPendingTransactions();
+      } finally {
+        this.isProcessing = false;
+      }
     }, intervalMs);
   }
 
   async stop() {
     this.isRunning = false;
+    this.isProcessing = false;
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
