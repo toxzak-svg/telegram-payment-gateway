@@ -77,6 +77,48 @@ export class DexAggregatorService {
       return; // Already initialized
     }
     await this.tonService.initializeWallet();
+
+    const mnemonic = process.env.TON_WALLET_MNEMONIC;
+    const isRealBlockchainTest = process.env.RUN_DEX_INTEGRATION_TESTS === 'true' && !this.isSimulationMode();
+    // Require mnemonic if NOT in simulation mode OR if running real blockchain tests
+    const requiresMnemonic = !this.isSimulationMode() || isRealBlockchainTest;
+
+    if (requiresMnemonic && (!mnemonic || mnemonic.trim().split(' ').length < 12)) {
+      throw new DexError(
+        DexErrorCode.WALLET_NOT_INITIALIZED,
+        'TON_WALLET_MNEMONIC not set in environment variables'
+      );
+    }
+
+    const mnemonicToUse = mnemonic && mnemonic.trim().length > 0
+      ? mnemonic
+      : 'test '.repeat(24).trim();
+
+    if (this.isSimulationMode()) {
+      const keyPair = await mnemonicToPrivateKey(mnemonicToUse.split(' '));
+      this.keyPair = keyPair;
+      this.wallet = WalletContractV4.create({
+        workchain: 0,
+        publicKey: keyPair.publicKey,
+      });
+      console.log('🧪 DEX simulator wallet initialized');
+      return;
+    }
+
+    try {
+      this.keyPair = await mnemonicToPrivateKey(mnemonicToUse.split(' '));
+      this.wallet = WalletContractV4.create({
+        workchain: 0,
+        publicKey: this.keyPair.publicKey,
+      });
+
+      console.log('✅ DEX wallet initialized:', this.wallet.address.toString());
+    } catch (error: any) {
+      throw new DexError(
+        DexErrorCode.WALLET_NOT_INITIALIZED,
+        `Failed to initialize wallet: ${error.message}`
+      );
+    }
   }
 
   /**

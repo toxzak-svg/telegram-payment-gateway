@@ -739,6 +739,17 @@ refactor: code refactoring
 chore: maintenance tasks
 ```
 
+### Using GitHub Copilot
+
+This repository is configured for GitHub Copilot coding agent! See [Copilot Setup Guide](./docs/COPILOT_SETUP.md) for:
+
+- Custom instructions and best practices
+- Pre-configured development environment
+- Task examples and workflow guidance
+- Troubleshooting tips
+
+Copilot can help with bug fixes, feature additions, tests, and documentation. Simply assign it an issue or prompt it with a task.
+
 ---
 
 ## 📄 License
@@ -759,6 +770,7 @@ MIT License - see [LICENSE](./LICENSE) file for details
 ## 📞 Support
 
 - **Documentation**: [/docs](/docs)
+- **GitHub Copilot Setup**: [Copilot Configuration Guide](./docs/COPILOT_SETUP.md)
 - **Issues**: [GitHub Issues](https://github.com/toxzak-svg/telegram-payment-gateway/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/toxzak-svg/telegram-payment-gateway/discussions)
 
