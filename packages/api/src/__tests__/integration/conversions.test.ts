@@ -1,8 +1,17 @@
 import request from 'supertest';
 import { buildTestApp } from './app.test-setup';
+import { cleanDatabase, disconnectDatabase } from './db-test-utils';
 
 describe('Conversions API', () => {
   const app = buildTestApp();
+
+  beforeEach(async () => {
+    await cleanDatabase();
+  });
+
+  afterAll(async () => {
+    await disconnectDatabase();
+  });
 
   test('GET /api/v1/conversions/rate - returns quote', async () => {
     const res = await request(app).get('/api/v1/conversions/rate').query({ amount: 100 });

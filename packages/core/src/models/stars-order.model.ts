@@ -23,6 +23,8 @@ export type AtomicSwap = {
   telegram_tx_id?: string | null;
   status?: string;
   created_at?: Date;
+  ton_amount?: string;
+  rate?: string;
 };
 
 export class StarsOrderModel {
@@ -91,6 +93,10 @@ export class StarsOrderModel {
   }
 
   async createAtomicSwap(data: AtomicSwap) {
+    const row = await this.db.one(
+      `INSERT INTO atomic_swaps(sell_order_id, buy_order_id, smart_contract_address, ton_tx_hash, telegram_tx_id, status, ton_amount, rate)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [data.sell_order_id, data.buy_order_id, data.smart_contract_address ?? null, data.ton_tx_hash ?? null, data.telegram_tx_id ?? null, data.status ?? 'pending', data.ton_amount, data.rate]
     return this.db.one(
       `INSERT INTO atomic_swaps(sell_order_id, buy_order_id, smart_contract_address, ton_tx_hash, telegram_tx_id, status)
        VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,

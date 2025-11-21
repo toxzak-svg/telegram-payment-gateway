@@ -1,0 +1,72 @@
+name: "Copilot Setup Steps"
+
+# This workflow pre-installs dependencies for GitHub Copilot coding agent
+# Documentation: https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    # PostgreSQL service for database-dependent tests and migrations
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: tg_user
+          POSTGRES_PASSWORD: tg_pass
+          POSTGRES_DB: tg_payment_dev
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all workspaces
+        run: npm run build --workspaces --if-present
+
+      - name: Set up environment variables
+        run: |
+          cp .env.example .env
+          # Update DATABASE_URL to match PostgreSQL service configuration
+          # Must match service credentials: tg_user/tg_pass/tg_payment_dev
+          sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgresql://tg_user:tg_pass@localhost:5432/tg_payment_dev|g' .env
+
+      - name: Run database migrations
+        run: npm run migrate
+        env:
+          # Use same credentials as PostgreSQL service above
+          DATABASE_URL: postgresql://tg_user:tg_pass@localhost:5432/tg_payment_dev
+
+      - name: Verify setup
+        run: |
+          echo "✅ Node.js version: $(node --version)"
+          echo "✅ npm version: $(npm --version)"
+          echo "✅ TypeScript version: $(npx tsc --version)"
+          echo "✅ Dependencies installed"
+          echo "✅ Database migrations completed"

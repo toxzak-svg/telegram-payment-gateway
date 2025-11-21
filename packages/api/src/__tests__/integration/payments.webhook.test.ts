@@ -1,8 +1,17 @@
 import request from 'supertest';
 import { buildTestApp } from './app.test-setup';
+import { cleanDatabase, disconnectDatabase } from './db-test-utils';
 
 describe('Payments API - webhook', () => {
   const app = buildTestApp();
+
+  beforeEach(async () => {
+    await cleanDatabase();
+  });
+
+  afterAll(async () => {
+    await disconnectDatabase();
+  });
 
   test('POST /api/v1/payments/webhook - acknowledges webhook', async () => {
     const payload = {

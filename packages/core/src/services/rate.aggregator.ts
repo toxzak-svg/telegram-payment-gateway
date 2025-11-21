@@ -38,6 +38,15 @@ export class RateAggregatorService {
   } as const;
 
   private defaultWeight = 0.25;
+  private simulationMode: boolean;
+
+  constructor() {
+    const simulationFlag = process.env.RATE_SIMULATION_MODE ?? (process.env.NODE_ENV === 'test' ? 'true' : 'false');
+    this.simulationMode = simulationFlag === 'true';
+    if (this.simulationMode) {
+      console.log('🧪 RateAggregatorService running in simulation mode');
+    }
+  }
 
   /**
    * Get aggregated exchange rate from multiple sources
@@ -51,6 +60,11 @@ export class RateAggregatorService {
     targetCurrency: string
   ): Promise<AggregatedRate> {
     console.log(`📊 Fetching rates: ${sourceCurrency} → ${targetCurrency}`);
+
+    // Use simulation mode if enabled
+    if (this.simulationMode) {
+      return this.getSimulatedRate(sourceCurrency, targetCurrency);
+    }
 
     try {
       // Fetch from all sources in parallel
@@ -257,6 +271,80 @@ export class RateAggregatorService {
     // TODO: Implement Redis caching for production
     const rate = await this.getAggregatedRate(source, target);
     return rate.averageRate;
+  }
+
+  /**
+   * Get simulated rate data for testing
+   * Note: These rates are test fixtures and do not reflect current market values
+   */
+  private getSimulatedRate(
+    sourceCurrency: string,
+    targetCurrency: string
+  ): AggregatedRate {
+    // Simulated rates for common pairs (test fixtures - not real market data)
+    const rateMap: Record<string, Record<string, number>> = {
+      TON: {
+        USD: 2.15,
+        EUR: 1.98,
+        GBP: 1.72,
+      },
+      BTC: {
+        USD: 45000,
+        EUR: 41500,
+        GBP: 36000,
+      },
+      ETH: {
+        USD: 2800,
+        EUR: 2580,
+        GBP: 2240,
+      },
+    };
+
+    const baseRate = rateMap[sourceCurrency.toUpperCase()]?.[targetCurrency.toUpperCase()] || 1.0;
+
+    // Simulate slight variations from different sources
+    const rates: RateSource[] = [
+      {
+        source: 'coingecko',
+        value: baseRate * 1.005, // +0.5%
+        timestamp: Date.now(),
+      },
+      {
+        source: 'dexscreener',
+        value: baseRate * 0.998, // -0.2%
+        timestamp: Date.now(),
+      },
+      {
+        source: 'coinmarketcap',
+        value: baseRate * 1.002, // +0.2%
+        timestamp: Date.now(),
+      },
+    ];
+
+    const bestRate = Math.min(...rates.map((r) => r.value));
+
+    // Calculate weighted average
+    const { sum: weightedSum, weightSum } = rates.reduce(
+      (acc, rate) => {
+        const weight = this.weights[rate.source as keyof typeof this.weights] ?? this.defaultWeight;
+        return {
+          sum: acc.sum + rate.value * weight,
+          weightSum: acc.weightSum + weight,
+        };
+      },
+      { sum: 0, weightSum: 0 }
+    );
+
+    console.log(`🧪 Simulated rates for ${sourceCurrency} → ${targetCurrency}:`, rates);
+
+    return {
+      bestRate,
+      averageRate: weightSum > 0 ? weightedSum / weightSum : weightedSum,
+      rates,
+      sourceCurrency,
+      targetCurrency,
+      timestamp: Date.now(),
+    };
   }
 }
 

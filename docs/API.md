@@ -158,6 +158,33 @@ text
 
 ---
 
+### TON Transaction Webhook
+
+Receive notifications about TON blockchain transactions (deposits).
+
+**Endpoint:** `POST /api/v1/webhooks/ton-transaction`  
+**Authentication:** None (Public endpoint for blockchain scanners)
+
+**Request Body:**
+```json
+{
+  "tx_hash": "unmatched_tx_hash",
+  "sender": "some_ton_address",
+  "amount": "1000000000",
+  "destination": "our_custodial_wallet_address"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Webhook received"
+}
+```
+
+---
+
 ### Get Payment Details
 
 Retrieve details for a specific payment.

@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
 import { P2PLiquidityService } from './p2p-liquidity.service';
 import { FeeService } from './fee.service';
+import TonBlockchainService from './ton-blockchain.service';
 
 export interface ConversionRecord {
   id: string;
@@ -48,11 +49,21 @@ export class ConversionService {
   private pool: Pool;
   private p2pLiquidityService: P2PLiquidityService;
   private feeService: FeeService;
+  private tonService: TonBlockchainService;
 
   constructor(pool: Pool) {
     this.pool = pool;
     this.p2pLiquidityService = new P2PLiquidityService(pool);
     this.feeService = new FeeService(pool);
+    this.tonService = new TonBlockchainService(
+      process.env.TON_API_URL || 'https://toncenter.com/api/v2/jsonRPC',
+      process.env.TON_API_KEY,
+      process.env.TON_WALLET_MNEMONIC
+    );
+    // Initialize wallet for polling (fire and forget)
+    this.tonService.initializeWallet().catch(err => 
+      console.warn('⚠️ Failed to initialize wallet for polling (might be already init):', err.message)
+    );
   }
 
   /**
@@ -320,44 +331,60 @@ export class ConversionService {
    */
   private async pollConversionStatus(
     conversionId: string,
-    txHash: string
+    txHash: string,
+    attempt: number = 1
   ): Promise<void> {
+    const maxAttempts = 60; // 5 minutes (5s * 60)
+
+    if (attempt > maxAttempts) {
+      console.error(`❌ Polling timeout for conversion ${conversionId} (tx: ${txHash})`);
+      // We don't mark as failed automatically, as it might just be slow.
+      // Reconciliation service should pick this up later.
+      return;
+    }
+
     setTimeout(async () => {
-      // TODO: Implement blockchain transaction status polling
-      const status = { status: 'pending' } as any;
+      try {
+        const tx = await this.tonService.getTransaction(txHash);
 
-      if (status.status === 'confirmed') {
-        await this.pool.query(
-          `UPDATE conversions 
-           SET status = 'completed', ton_tx_hash = $1, 
-               completed_at = NOW(), updated_at = NOW()
-           WHERE id = $2`,
-          [status.tonTxHash, conversionId]
-        );
-
-        console.log('✅ Conversion completed:', { conversionId, txHash: status.tonTxHash });
-
-        const feeResult = await this.pool.query(
-          'SELECT id FROM platform_fees WHERE conversion_id = $1',
-          [conversionId]
-        );
-        
-        if (feeResult.rows.length > 0) {
-          await this.feeService.markFeeCollected(
-            feeResult.rows[0].id,
-            status.tonTxHash || 'pending'
+        if (tx && tx.confirmed && tx.success) {
+          await this.pool.query(
+            `UPDATE conversions 
+             SET status = 'completed', ton_tx_hash = $1, 
+                 completed_at = NOW(), updated_at = NOW()
+             WHERE id = $2`,
+            [tx.hash, conversionId]
           );
+
+          console.log('✅ Conversion completed on-chain:', { conversionId, txHash: tx.hash });
+
+          const feeResult = await this.pool.query(
+            'SELECT id FROM platform_fees WHERE conversion_id = $1',
+            [conversionId]
+          );
+          
+          if (feeResult.rows.length > 0) {
+            await this.feeService.markFeeCollected(
+              feeResult.rows[0].id,
+              tx.hash
+            );
+          }
+        } else if (tx && tx.confirmed && !tx.success) {
+          console.error(`❌ Transaction failed on-chain: ${txHash} (Exit code: ${tx.exitCode})`);
+          await this.pool.query(
+            `UPDATE conversions 
+             SET status = 'failed', error_message = $1, updated_at = NOW()
+             WHERE id = $2`,
+            [`Transaction failed on-chain (exit code: ${tx.exitCode})`, conversionId]
+          );
+        } else {
+          // Not found or not confirmed yet, continue polling
+          this.pollConversionStatus(conversionId, txHash, attempt + 1);
         }
-      } else if (status.status === 'failed') {
-        await this.pool.query(
-          `UPDATE conversions 
-           SET status = 'failed', error_message = $1, updated_at = NOW()
-           WHERE id = $2`,
-          [status.errorMessage, conversionId]
-        );
-      } else {
-        // Continue polling
-        this.pollConversionStatus(conversionId, txHash);
+      } catch (error) {
+        console.error(`⚠️ Error polling transaction ${txHash}:`, error);
+        // Retry anyway
+        this.pollConversionStatus(conversionId, txHash, attempt + 1);
       }
     }, 5000);
   }

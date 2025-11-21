@@ -53,13 +53,19 @@ export class StarsP2PService {
       status: 'open',
     };
     const created = await this.model.createOrder(order);
-    await this.tryMatchOrder(created);
-    return created;
+    // Try to match immediately and get the result
+    const matchResult = await this.tryMatchOrder(created);
+    
+    // Return the latest state of the order
+    const latestOrder = await this.model.getById(created.id);
+    return latestOrder || created;
   }
 
   private async tryMatchOrder(order: any) {
     try {
       if (!order || !order.id) return null;
+      if (order.status !== 'open') return null; // Don't match already matched/filled orders
+
       if (order.type === 'sell') {
         // find buy orders with rate >= sell.rate
         const candidates = await this.model.findOpenOrders('buy', undefined, order.rate, 5);
@@ -89,6 +95,8 @@ export class StarsP2PService {
         sell_order_id: sell.id,
         buy_order_id: buy.id,
         status: 'pending',
+        ton_amount: sell.ton_amount, // Add ton_amount to swap record
+        rate: sell.rate, // Add rate to swap record
       };
       const createdSwap = await m.createAtomicSwap(swap);
       // In a real implementation we would now coordinate escrow and TON transfer
@@ -140,13 +148,8 @@ export class StarsP2PService {
 
     if (!sellOrder || !buyOrder) throw new Error('Orders not found');
 
-    // Calculate TON amount
-    let tonAmount = 0;
-    if (buyOrder.ton_amount) {
-        tonAmount = parseFloat(buyOrder.ton_amount);
-    } else if (sellOrder.stars_amount && sellOrder.rate) {
-        tonAmount = sellOrder.stars_amount * parseFloat(sellOrder.rate);
-    }
+    // Use amount from the swap record
+    const tonAmount = parseFloat(swap.ton_amount);
 
     if (tonAmount <= 0) throw new Error('Invalid TON amount');
 

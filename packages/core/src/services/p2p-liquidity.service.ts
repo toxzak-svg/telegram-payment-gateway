@@ -197,27 +197,24 @@ export class P2PLiquidityService {
         throw new Error('Conversion not found');
       }
 
-      const { source_amount, user_id, rate: lockedRate } = conversion.rows[0];
+      const { source_amount, user_id, rate: lockedRate, target_currency } = conversion.rows[0];
+
+      // For P2P, we are assuming Stars to TON conversion
+      if (target_currency.toUpperCase() !== 'TON') {
+        throw new Error(`P2P conversion only supports TON as a target currency, but got ${target_currency}`);
+      }
 
       // Use locked rate if available, otherwise fetch current market rate
-      // For now, we assume the rate is passed or we use a default/market rate
-      // In a real flow, the rate should be locked during the quote phase
-      const rate = lockedRate ? lockedRate.toString() : '0.000015'; 
+      const rate = lockedRate ? lockedRate.toString() : await this.getMarketRate('STARS', 'TON');
       const tonAmount = (source_amount * parseFloat(rate)).toString();
 
       console.log(`Creating P2P buy order for conversion ${conversionId}: ${source_amount} Stars @ ${rate}`);
       const order = await this.p2pService.createBuyOrder(user_id, tonAmount, rate);
-
-      // Check if order was immediately matched and completed
-      // We need to query the order again to get the latest status if createBuyOrder returns the initial state
-      // But createBuyOrder awaits tryMatchOrder, so the DB should be updated.
-      // However, the returned object 'created' might be the initial state.
       
       const updatedOrder = await this.pool.query('SELECT * FROM stars_orders WHERE id = $1', [order.id]);
       const currentStatus = updatedOrder.rows[0]?.status;
 
       if (currentStatus === 'completed' || currentStatus === 'matched') {
-        // Find the swap to get the tx hash
         const swap = await this.pool.query(
           'SELECT * FROM atomic_swaps WHERE buy_order_id = $1 OR sell_order_id = $1 LIMIT 1',
           [order.id]
@@ -231,8 +228,6 @@ export class P2PLiquidityService {
         }
       }
 
-      // If not immediately completed, we return undefined hash
-      // The background worker or polling will handle the rest
       return {
         txHash: undefined, 
         dexPoolId: 'p2p-order-book',
@@ -258,26 +253,40 @@ export class P2PLiquidityService {
         throw new Error('Conversion not found');
       }
 
-      const { source_amount, source_currency, target_currency } = conversion.rows[0];
+      const { source_amount, source_currency, target_currency, rate: lockedRate } = conversion.rows[0];
+
+      const bestQuote = await this.dexAggregator.getBestRate(source_currency, target_currency, source_amount);
+      const {poolId} = bestQuote.bestPool;
+      const slippageTolerance = 0.05; // 5%
+      const minOutput = source_amount * bestQuote.rate * (1 - slippageTolerance);
 
       // Execute DEX swap
       const result = await this.dexAggregator.executeSwap(
         source.provider as 'dedust' | 'stonfi',
-        'pool-id', // Will be determined by best quote
+        poolId,
         source_currency,
         target_currency,
         source_amount,
-        source_amount * source.rate * 0.95 // 5% slippage tolerance
+        minOutput
       );
 
       return {
         txHash: result.txHash,
-        dexPoolId: 'pool-id', // From best quote
+        dexPoolId: poolId,
       };
     } catch (error: any) {
       console.error('DEX conversion execution error:', error);
       throw new Error(`DEX conversion failed: ${error.message}`);
     }
+  }
+
+  private async getMarketRate(from: string, to: string): Promise<string> {
+    // In a real implementation, this would query an oracle or a reliable price feed.
+    // For now, we'll use a hardcoded value for demonstration.
+    if (from === 'STARS' && to === 'TON') {
+      return '0.000015';
+    }
+    return '0';
   }
 
   /**

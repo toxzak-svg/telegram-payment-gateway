@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS platform_fees (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     
     -- Relationship
+    payment_id UUID REFERENCES payments(id) ON DELETE SET NULL,
     conversion_id UUID REFERENCES conversions(id) ON DELETE SET NULL,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS platform_config (
 );
 
 -- Indexes for performance
+CREATE INDEX idx_platform_fees_payment ON platform_fees(payment_id);
 CREATE INDEX idx_platform_fees_conversion ON platform_fees(conversion_id);
 CREATE INDEX idx_platform_fees_user ON platform_fees(user_id, created_at DESC);
 CREATE INDEX idx_platform_fees_status ON platform_fees(status);

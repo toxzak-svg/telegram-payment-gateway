@@ -14,6 +14,8 @@ export interface TransactionInfo {
   timestamp: number;
   confirmed: boolean;
   confirmations: number;
+  success?: boolean;
+  exitCode?: number;
 }
 
 /**
@@ -68,6 +70,34 @@ export class TonBlockchainService {
       console.error('❌ Failed to initialize wallet:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get the underlying TonClient
+   */
+  getClient(): TonClient {
+    return this.client;
+  }
+
+  /**
+   * Get the initialized wallet contract and key pair
+   */
+  getWallet(): { wallet: WalletContractV4; keyPair: any } {
+    if (!this.wallet || !this.keyPair) {
+      throw new Error('Wallet not initialized. Call initializeWallet() first.');
+    }
+    return { wallet: this.wallet, keyPair: this.keyPair };
+  }
+
+  /**
+   * Get a sender object for sending transactions
+   */
+  getSender() {
+    if (!this.wallet || !this.keyPair) {
+      throw new Error('Wallet not initialized');
+    }
+    const walletContract = this.client.open(this.wallet);
+    return walletContract.sender(this.keyPair.secretKey);
   }
 
   /**
@@ -239,6 +269,7 @@ export class TonBlockchainService {
           // Check transaction description for exit code
           const { description } = tx;
           
+
           // Verify transaction was successful
           // Only exitCode === 0 indicates success
           if (description && 'type' in description) {
@@ -252,6 +283,7 @@ export class TonBlockchainService {
             }
           }
           
+
           // Simplified: verify based on inclusion in transaction list
           // In production, check block height and confirmations
           return true;
@@ -262,6 +294,63 @@ export class TonBlockchainService {
     } catch (error) {
       console.error('❌ Failed to verify transaction:', error);
       return false;
+    }
+  }
+
+  /**
+   * Get transaction details by hash
+   */
+  async getTransaction(txHash: string): Promise<TransactionInfo | null> {
+    if (!this.walletAddress) {
+      throw new Error('Wallet not initialized');
+    }
+
+    try {
+      // Fetch recent transactions for the wallet
+      const transactions = await this.client.getTransactions(this.walletAddress, {
+        limit: 50,
+      });
+
+      for (const tx of transactions) {
+        if (tx.hash().toString('hex') === txHash) {
+          let amount = 0;
+          let from = '';
+          let to = '';
+
+          if (tx.inMessage && tx.inMessage.info.type === 'internal') {
+             amount = parseFloat(fromNano(tx.inMessage.info.value.coins));
+             from = tx.inMessage.info.src.toString();
+             to = tx.inMessage.info.dest.toString();
+          }
+          
+          // Check success status (compute phase exit code)
+          let success = true;
+          let exitCode = 0;
+          
+          if (tx.description.type === 'generic') {
+             const {computePhase} = tx.description;
+             exitCode = computePhase.type === 'vm' ? computePhase.exitCode : 0;
+             success = exitCode === 0 || exitCode === 1;
+          }
+
+          return {
+            hash: txHash,
+            from,
+            to,
+            amount,
+            timestamp: tx.now,
+            confirmed: true,
+            confirmations: 1,
+            success,
+            exitCode
+          };
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Failed to get transaction:', error);
+      return null;
     }
   }
 
