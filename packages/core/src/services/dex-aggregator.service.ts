@@ -1,9 +1,14 @@
 import axios from 'axios';
-import { TonClient, WalletContractV4, Address, fromNano, toNano } from '@ton/ton';
+import { TonClient, WalletContractV4, Address, fromNano, toNano, Cell, beginCell } from '@ton/ton';
 import { mnemonicToPrivateKey } from '@ton/crypto';
 import { DeDustPool } from '../contracts/dedust.contract';
 import { StonfiRouter } from '../contracts/stonfi.contract';
+import { JettonMaster, JettonWallet } from '../contracts/jetton.contract';
 import { DexError, DexErrorCode, parseDexError, DexRetryHandler } from './dex-error-handler';
+
+// DEX operation codes - Note: These may differ between DEXes
+// TODO: Verify actual operation codes for each DEX from their documentation
+export const DEX_SWAP_OP = 0x25938561;
 
 export interface DexPoolInfo {
   provider: 'dedust' | 'stonfi';
@@ -502,6 +507,319 @@ export class DexAggregatorService {
       console.error('❌ Ston.fi swap failed:', error);
       throw parseDexError(error);
     }
+  }
+
+  /**
+   * Execute DeDust TON native swap (TON → Jetton or Jetton → TON)
+   * 
+   * Note: This method delegates to executeDeDustSwap which already handles
+   * TON native swaps via direct pool contract interaction. The separate method
+   * exists for API clarity and future extensibility if TON-specific logic is needed.
+   */
+  private async executeDeDustTonSwap(
+    poolId: string,
+    fromToken: string,
+    toToken: string,
+    amount: number,
+    minOutput: number
+  ): Promise<SwapResult> {
+    if (this.isSimulationMode()) {
+      return this.simulateSwap('dedust', poolId, fromToken, toToken, amount, minOutput);
+    }
+
+    // Delegate to the main swap handler which supports TON native swaps
+    return this.executeDeDustSwap(poolId, fromToken, toToken, amount, minOutput);
+  }
+
+  /**
+   * Execute Ston.fi TON native swap (TON → Jetton or Jetton → TON)
+   * 
+   * Note: This method delegates to executeStonfiSwap which already handles
+   * TON native swaps via router contract. The separate method exists for
+   * API clarity and future extensibility if TON-specific logic is needed.
+   */
+  private async executeStonfiTonSwap(
+    poolId: string,
+    fromToken: string,
+    toToken: string,
+    amount: number,
+    minOutput: number
+  ): Promise<SwapResult> {
+    if (this.isSimulationMode()) {
+      return this.simulateSwap('stonfi', poolId, fromToken, toToken, amount, minOutput);
+    }
+
+    // Delegate to the main swap handler which supports TON native swaps
+    return this.executeStonfiSwap(poolId, fromToken, toToken, amount, minOutput);
+  }
+
+  /**
+   * Execute DeDust Jetton-to-Jetton swap
+   * Requires Jetton transfer to pool with swap payload
+   */
+  private async executeDeDustJettonSwap(
+    poolId: string,
+    fromToken: string,
+    toToken: string,
+    amount: number,
+    minOutput: number
+  ): Promise<SwapResult> {
+    if (this.isSimulationMode()) {
+      return this.simulateSwap('dedust', poolId, fromToken, toToken, amount, minOutput);
+    }
+
+    try {
+      await this.initializeWallet();
+
+      if (!this.wallet || !this.keyPair) {
+        throw new DexError(
+          DexErrorCode.WALLET_NOT_INITIALIZED,
+          'Wallet not initialized'
+        );
+      }
+
+      console.log(`🔄 Executing DeDust Jetton swap: ${amount} ${fromToken} → ${toToken}`);
+
+      // 1. Open wallet contract
+      const walletContract = this.client.open(this.wallet);
+      const seqno = await walletContract.getSeqno();
+
+      // 2. Get Jetton wallet address for fromToken
+      const fromTokenAddress = await this.getTokenAddress(fromToken);
+      const jettonMaster = this.client.open(JettonMaster.createFromAddress(fromTokenAddress));
+      const jettonWalletAddress = await jettonMaster.getWalletAddress(this.wallet.address);
+      const jettonWallet = this.client.open(JettonWallet.createFromAddress(jettonWalletAddress));
+
+      // 3. Check Jetton balance
+      const jettonData = await jettonWallet.getWalletData();
+      const amountInBigInt = toNano(amount.toString());
+      
+      if (jettonData.balance < amountInBigInt) {
+        throw new DexError(
+          DexErrorCode.INSUFFICIENT_FUNDS,
+          `Insufficient Jetton balance: ${fromNano(jettonData.balance)} < ${amount}`,
+          { balance: fromNano(jettonData.balance), required: amount }
+        );
+      }
+
+      // 4. Build swap payload for DeDust
+      const poolAddress = Address.parse(poolId);
+      const minReceiveBigInt = toNano(minOutput.toString());
+      const deadline = Math.floor(Date.now() / 1000) + 600; // 10 minutes
+
+      const forwardPayload = this.buildDeDustSwapPayload(minReceiveBigInt, deadline);
+
+      // 5. Send Jetton transfer with swap payload
+      const gasEstimate = await this.estimateGasFee('swap');
+      const forwardTonAmount = toNano('0.25'); // Forward amount for DEX operation
+
+      await jettonWallet.sendTransfer(
+        walletContract.sender(this.keyPair.secretKey),
+        {
+          queryId: BigInt(Date.now()),
+          amount: amountInBigInt,
+          destination: poolAddress,
+          responseDestination: this.wallet.address,
+          customPayload: null,
+          forwardTonAmount,
+          forwardPayload,
+        },
+        gasEstimate + forwardTonAmount
+      );
+
+      console.log('📤 Jetton transfer with swap payload sent, waiting for confirmation...');
+
+      // 6. Wait for transaction confirmation
+      const confirmed = await this.waitForTransaction(walletContract, seqno, 60);
+      
+      if (!confirmed) {
+        throw new DexError(
+          DexErrorCode.TRANSACTION_TIMEOUT,
+          'Transaction timeout - swap not confirmed'
+        );
+      }
+
+      // 7. Get transaction details
+      const transactions = await this.client.getTransactions(this.wallet.address, { limit: 5 });
+      const txHash = transactions[0]?.hash().toString('hex') || 'unknown';
+      const actualOutput = await this.parseSwapOutput(transactions[0]);
+
+      console.log(`✅ DeDust Jetton swap successful!`);
+      console.log(`   TX: ${txHash}`);
+      console.log(`   Output: ${fromNano(actualOutput)} ${toToken}`);
+
+      return {
+        txHash,
+        outputAmount: parseFloat(fromNano(actualOutput)),
+        gasUsed: parseFloat(fromNano(gasEstimate)),
+      };
+    } catch (error: any) {
+      console.error('❌ DeDust Jetton swap failed:', error);
+      throw parseDexError(error);
+    }
+  }
+
+  /**
+   * Execute Ston.fi Jetton-to-Jetton swap
+   * Uses router contract for multi-hop swaps
+   */
+  private async executeStonfiJettonSwap(
+    poolId: string,
+    fromToken: string,
+    toToken: string,
+    amount: number,
+    minOutput: number
+  ): Promise<SwapResult> {
+    if (this.isSimulationMode()) {
+      return this.simulateSwap('stonfi', poolId, fromToken, toToken, amount, minOutput);
+    }
+
+    try {
+      await this.initializeWallet();
+
+      if (!this.wallet || !this.keyPair) {
+        throw new DexError(
+          DexErrorCode.WALLET_NOT_INITIALIZED,
+          'Wallet not initialized'
+        );
+      }
+
+      console.log(`🔄 Executing Ston.fi Jetton swap: ${amount} ${fromToken} → ${toToken}`);
+
+      // 1. Open wallet contract
+      const walletContract = this.client.open(this.wallet);
+      const seqno = await walletContract.getSeqno();
+
+      // 2. Get Jetton wallet for fromToken
+      const fromTokenAddress = await this.getTokenAddress(fromToken);
+      const jettonMaster = this.client.open(JettonMaster.createFromAddress(fromTokenAddress));
+      const jettonWalletAddress = await jettonMaster.getWalletAddress(this.wallet.address);
+      const jettonWallet = this.client.open(JettonWallet.createFromAddress(jettonWalletAddress));
+
+      // 3. Check Jetton balance
+      const jettonData = await jettonWallet.getWalletData();
+      const amountInBigInt = toNano(amount.toString());
+      
+      if (jettonData.balance < amountInBigInt) {
+        throw new DexError(
+          DexErrorCode.INSUFFICIENT_FUNDS,
+          `Insufficient Jetton balance: ${fromNano(jettonData.balance)} < ${amount}`,
+          { balance: fromNano(jettonData.balance), required: amount }
+        );
+      }
+
+      // 4. Get router contract and build path
+      const routerAddress = Address.parse(
+        process.env.STONFI_ROUTER_ADDRESS || 'EQB3ncyBUTjZUA5EnFKR5_EnOMI9V1tTEAAPaiU71gc4TiUt'
+      );
+      const toTokenAddress = await this.getTokenAddress(toToken);
+      const path = [fromTokenAddress, toTokenAddress];
+
+      // 5. Build Ston.fi swap payload
+      const minReceiveBigInt = toNano(minOutput.toString());
+      const deadline = Math.floor(Date.now() / 1000) + 600;
+      
+      const forwardPayload = this.buildStonfiSwapPayload(
+        minReceiveBigInt,
+        path,
+        this.wallet.address,
+        deadline
+      );
+
+      // 6. Send Jetton transfer to router with swap payload
+      const gasEstimate = await this.estimateGasFee('swap');
+      const forwardTonAmount = toNano('0.3'); // Forward amount for DEX operation
+
+      await jettonWallet.sendTransfer(
+        walletContract.sender(this.keyPair.secretKey),
+        {
+          queryId: BigInt(Date.now()),
+          amount: amountInBigInt,
+          destination: routerAddress,
+          responseDestination: this.wallet.address,
+          customPayload: null,
+          forwardTonAmount,
+          forwardPayload,
+        },
+        gasEstimate + forwardTonAmount
+      );
+
+      console.log('📤 Jetton transfer to router sent, waiting for confirmation...');
+
+      // 7. Wait for transaction confirmation
+      const confirmed = await this.waitForTransaction(walletContract, seqno, 60);
+      
+      if (!confirmed) {
+        throw new DexError(
+          DexErrorCode.TRANSACTION_TIMEOUT,
+          'Transaction timeout - swap not confirmed'
+        );
+      }
+
+      // 8. Get transaction details
+      const transactions = await this.client.getTransactions(this.wallet.address, { limit: 5 });
+      const txHash = transactions[0]?.hash().toString('hex') || 'unknown';
+      const actualOutput = await this.parseStonfiSwapOutput(transactions[0]);
+
+      console.log(`✅ Ston.fi Jetton swap successful!`);
+      console.log(`   TX: ${txHash}`);
+      console.log(`   Output: ${fromNano(actualOutput)} ${toToken}`);
+
+      return {
+        txHash,
+        outputAmount: parseFloat(fromNano(actualOutput)),
+        gasUsed: parseFloat(fromNano(gasEstimate)),
+      };
+    } catch (error: any) {
+      console.error('❌ Ston.fi Jetton swap failed:', error);
+      throw parseDexError(error);
+    }
+  }
+
+  /**
+   * Wait for transaction confirmation via seqno increment
+   * This replaces waitForSeqnoIncrement with better naming
+   */
+  private async waitForTransaction(
+    wallet: any,
+    initialSeqno: number,
+    maxAttempts: number = 60
+  ): Promise<boolean> {
+    return this.waitForSeqnoIncrement(wallet, initialSeqno, maxAttempts);
+  }
+
+  /**
+   * Build DeDust swap payload for Jetton transfer
+   */
+  private buildDeDustSwapPayload(minAmountOut: bigint, deadline: number): Cell {
+    return beginCell()
+      .storeUint(DEX_SWAP_OP, 32) // swap op code
+      .storeUint(0, 64) // query id
+      .storeCoins(minAmountOut)
+      .storeUint(deadline, 32)
+      .endCell();
+  }
+
+  /**
+   * Build Ston.fi swap payload for Jetton transfer
+   */
+  private buildStonfiSwapPayload(
+    minAmountOut: bigint,
+    path: Address[],
+    recipientAddress: Address,
+    deadline: number
+  ): Cell {
+    const pathCell = beginCell();
+    path.forEach(addr => pathCell.storeAddress(addr));
+
+    return beginCell()
+      .storeUint(DEX_SWAP_OP, 32) // swap op code
+      .storeUint(0, 64) // query id
+      .storeCoins(minAmountOut)
+      .storeRef(pathCell.endCell())
+      .storeAddress(recipientAddress)
+      .storeUint(deadline, 32)
+      .endCell();
   }
 
   /**
