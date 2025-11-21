@@ -1,5 +1,9 @@
 import { Address, beginCell, Cell, Contract, ContractProvider, Sender, SendMode } from '@ton/core';
 
+// Jetton operation codes
+export const JETTON_TRANSFER_OP = 0x0f8a7ea5;
+export const JETTON_BURN_OP = 0x595f07bc;
+
 export interface JettonMasterData {
   totalSupply: bigint;
   mintable: boolean;
@@ -103,7 +107,7 @@ export class JettonWallet implements Contract {
     value: bigint
   ) {
     const messageBody = beginCell()
-      .storeUint(0x0f8a7ea5, 32) // transfer op code
+      .storeUint(JETTON_TRANSFER_OP, 32) // transfer op code
       .storeUint(params.queryId, 64)
       .storeCoins(params.amount)
       .storeAddress(params.destination)
@@ -135,7 +139,7 @@ export class JettonWallet implements Contract {
     value: bigint
   ) {
     const messageBody = beginCell()
-      .storeUint(0x595f07bc, 32) // burn op code
+      .storeUint(JETTON_BURN_OP, 32) // burn op code
       .storeUint(params.queryId, 64)
       .storeCoins(params.amount)
       .storeAddress(params.responseDestination)

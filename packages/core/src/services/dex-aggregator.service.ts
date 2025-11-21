@@ -6,6 +6,10 @@ import { StonfiRouter } from '../contracts/stonfi.contract';
 import { JettonMaster, JettonWallet } from '../contracts/jetton.contract';
 import { DexError, DexErrorCode, parseDexError, DexRetryHandler } from './dex-error-handler';
 
+// DEX operation codes - Note: These may differ between DEXes
+// TODO: Verify actual operation codes for each DEX from their documentation
+export const DEX_SWAP_OP = 0x25938561;
+
 export interface DexPoolInfo {
   provider: 'dedust' | 'stonfi';
   poolId: string;
@@ -507,6 +511,10 @@ export class DexAggregatorService {
 
   /**
    * Execute DeDust TON native swap (TON → Jetton or Jetton → TON)
+   * 
+   * Note: This method delegates to executeDeDustSwap which already handles
+   * TON native swaps via direct pool contract interaction. The separate method
+   * exists for API clarity and future extensibility if TON-specific logic is needed.
    */
   private async executeDeDustTonSwap(
     poolId: string,
@@ -519,12 +527,16 @@ export class DexAggregatorService {
       return this.simulateSwap('dedust', poolId, fromToken, toToken, amount, minOutput);
     }
 
-    // This is the same as executeDeDustSwap for TON native swaps
+    // Delegate to the main swap handler which supports TON native swaps
     return this.executeDeDustSwap(poolId, fromToken, toToken, amount, minOutput);
   }
 
   /**
    * Execute Ston.fi TON native swap (TON → Jetton or Jetton → TON)
+   * 
+   * Note: This method delegates to executeStonfiSwap which already handles
+   * TON native swaps via router contract. The separate method exists for
+   * API clarity and future extensibility if TON-specific logic is needed.
    */
   private async executeStonfiTonSwap(
     poolId: string,
@@ -537,7 +549,7 @@ export class DexAggregatorService {
       return this.simulateSwap('stonfi', poolId, fromToken, toToken, amount, minOutput);
     }
 
-    // This is the same as executeStonfiSwap for TON native swaps
+    // Delegate to the main swap handler which supports TON native swaps
     return this.executeStonfiSwap(poolId, fromToken, toToken, amount, minOutput);
   }
 
@@ -781,7 +793,7 @@ export class DexAggregatorService {
    */
   private buildDeDustSwapPayload(minAmountOut: bigint, deadline: number): Cell {
     return beginCell()
-      .storeUint(0x25938561, 32) // swap op code
+      .storeUint(DEX_SWAP_OP, 32) // swap op code
       .storeUint(0, 64) // query id
       .storeCoins(minAmountOut)
       .storeUint(deadline, 32)
@@ -801,7 +813,7 @@ export class DexAggregatorService {
     path.forEach(addr => pathCell.storeAddress(addr));
 
     return beginCell()
-      .storeUint(0x25938561, 32) // swap op code
+      .storeUint(DEX_SWAP_OP, 32) // swap op code
       .storeUint(0, 64) // query id
       .storeCoins(minAmountOut)
       .storeRef(pathCell.endCell())
