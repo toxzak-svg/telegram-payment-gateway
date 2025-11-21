@@ -1,6 +1,25 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+// Detect if we're in GitHub Codespaces and construct the API URL accordingly
+function getApiBaseUrl(): string {
+  // If explicitly set via env, use that
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // Check if we're in GitHub Codespaces forwarded URL
+  const hostname = window.location.hostname;
+  if (hostname.includes('.app.github.dev')) {
+    // Replace the port in the hostname (5173 -> 3000)
+    const apiHostname = hostname.replace('-5173.', '-3000.');
+    return `${window.location.protocol}//${apiHostname}/api/v1`;
+  }
+
+  // Default to localhost
+  return 'http://localhost:3000/api/v1';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

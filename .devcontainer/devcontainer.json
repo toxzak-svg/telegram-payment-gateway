@@ -1,0 +1,20 @@
+{
+  "name": "Telegram Payment Gateway",
+  "forwardPorts": [3000, 5173, 5432, 6379],
+  "portsAttributes": {
+    "3000": {
+      "label": "API Server",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Dashboard",
+      "onAutoForward": "openBrowser"
+    },
+    "5432": {
+      "label": "PostgreSQL"
+    },
+    "6379": {
+      "label": "Redis"
+    }
+  }
+}

@@ -26,6 +26,12 @@ router.post('/conversions', authenticate, conversionController.createConversion)
 router.get('/conversions/:id', authenticate, conversionController.getConversion);
 router.get('/conversions', authenticate, conversionController.getConversionHistory);
 
+// P2P Order routes (Limit Orders)
+router.post('/p2p/orders', authenticate, P2POrdersController.createOrder);
+router.get('/p2p/orders', authenticate, P2POrdersController.listOpenOrders);
+router.get('/p2p/orders/:id', authenticate, P2POrdersController.getOrder);
+router.delete('/p2p/orders/:id', authenticate, P2POrdersController.cancelOrder);
+
 // User routes
 router.post('/users/register', UserController.register);
 router.get('/users/me', authenticate, UserController.getMe);

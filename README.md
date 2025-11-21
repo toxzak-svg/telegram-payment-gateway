@@ -777,18 +777,18 @@ MIT License - see [LICENSE](./LICENSE) file for details
 - [x] Wallet management system
 - [x] Basic API endpoints
 
-### Phase 2: P2P Liquidity (In Progress)
+### Phase 2: P2P Liquidity ✅
 
 - [x] DEX aggregator service
 - [x] DeDust protocol integration
 - [x] Ston.fi integration
-- [ ] Smart order routing
-- [ ] Multi-pool liquidity discovery
+- [x] Smart order routing
+- [x] Multi-pool liquidity discovery
 
 ### Phase 3: Advanced Features
 
 - [ ] Cross-chain bridges (ETH, BSC)
-- [ ] Limit orders for conversions
+- [x] Limit orders for conversions
 - [ ] Advanced analytics dashboard
 - [ ] Multi-signature wallets
 - [ ] Automated market making

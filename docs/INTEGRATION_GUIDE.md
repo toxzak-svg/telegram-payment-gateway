@@ -9,8 +9,9 @@ Step-by-step guide to integrating Telegram Payment Gateway into your application
 3. [Telegram Bot Setup](#telegram-bot-setup)
 4. [Payment Flow](#payment-flow)
 5. [Conversion Flow](#conversion-flow)
-6. [Webhook Integration](#webhook-integration)
-7. [Production Checklist](#production-checklist)
+6. [P2P Order Flow](#p2p-order-flow)
+7. [Webhook Integration](#webhook-integration)
+8. [Production Checklist](#production-checklist)
 
 ---
 
@@ -274,9 +275,53 @@ text
 
 ---
 
+## P2P Order Flow
+
+### Step 7: Manage P2P Orders
+
+#### 7.1: Create Limit Order
+
+Create a buy or sell order at a specific rate:
+
+```javascript
+// Create a buy order: 5 TON for 1000 Stars (Rate: 0.005)
+const order = await gateway.createP2POrder({
+  type: 'buy',
+  starsAmount: 1000,
+  tonAmount: 5.0,
+  rate: 0.005
+});
+
+console.log('Order created:', order.orderId);
+```
+
+#### 7.2: List Open Orders
+
+View your active orders:
+
+```javascript
+const { orders } = await gateway.listP2POrders({
+  status: 'pending',
+  type: 'buy'
+});
+
+console.log('Active orders:', orders.length);
+```
+
+#### 7.3: Cancel Order
+
+Cancel an order if it hasn't been matched:
+
+```javascript
+await gateway.cancelP2POrder('order-uuid');
+console.log('Order cancelled');
+```
+
+---
+
 ## Webhook Integration
 
-### Step 7: Setup Webhook Endpoint
+### Step 8: Setup Webhook Endpoint
 
 Receive real-time notifications:
 

@@ -450,8 +450,8 @@ async pollConversionStatus(conversionId: string, txHash: string) {
 
 - [ ] FRAGMENT_REMOVAL_PLAN.md (archive or remove)
 - [ ] FRAGMENT_REMOVAL_QUICK_REF.md (archive or remove)
-- [ ] API.md (add new DEX/P2P endpoints)
-- [ ] INTEGRATION_GUIDE.md (update with P2P examples)
+- [x] API.md (add new DEX/P2P endpoints)
+- [x] INTEGRATION_GUIDE.md (update with P2P examples)
 
 ### To Create 📝
 
