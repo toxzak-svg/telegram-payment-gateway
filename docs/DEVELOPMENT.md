@@ -128,9 +128,10 @@ npm run build # Build all packages
 npm run build --workspace=@tg-payment/api
 
 Testing
-npm test # Run all tests
+npm test # Run all tests (includes DB setup)
+npm run test:prepare # Reset test database
+npm run test:run # Run tests without setup
 npm run test:api # Test API only
-npm run test:e2e # End-to-end tests
 
 Linting
 npm run lint # Lint all packages

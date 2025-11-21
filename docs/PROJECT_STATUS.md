@@ -13,6 +13,9 @@ A decentralized payment gateway for converting Telegram Stars → TON → Fiat u
 **Tech Stack**: TypeScript, Node.js 20, Express 4, PostgreSQL 16, TON Blockchain, React 18
 
 **Recent Updates** (November 21, 2025):
+- ✅ **Testing Infrastructure** - Added comprehensive test setup with database cleanup and environment configuration
+- ✅ **Webhook Support** - Added TON transaction webhook endpoint and controller
+- ✅ **Service Refactoring** - Centralized TON blockchain interactions in `TonBlockchainService`
 - ✅ **P2P Engine Live** - Atomic swaps and order matching implemented
 - ✅ **Background Workers** - Webhook dispatcher and settlement processor active
 - ✅ **DEX Integration** - Real on-chain swaps with DeDust and Ston.fi
@@ -31,6 +34,10 @@ A decentralized payment gateway for converting Telegram Stars → TON → Fiat u
 ### Phase 4: Fragment Removal & P2P/DEX ✅
 
 ### Phase 5: API Layer ✅
+
+- ✅ **REST API** - Express server with authentication, rate limiting, and error handling
+- ✅ **Webhook System** - Telegram payment notifications and TON transaction monitoring
+- ✅ **Documentation** - Comprehensive API reference and integration guide
 
 ### Phase 6: Dashboard ✅
 
