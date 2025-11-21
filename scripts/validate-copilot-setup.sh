@@ -22,13 +22,13 @@ else
     exit 1
 fi
 
-# Check for required steps
-required_steps=("Checkout code" "Set up Node.js" "Install dependencies")
-for step in "${required_steps[@]}"; do
+# Check for key setup steps
+key_steps=("Checkout code" "Set up Node.js" "Install dependencies")
+for step in "${key_steps[@]}"; do
     if grep -q "$step" .github/workflows/copilot-setup-steps.yml; then
         echo "✅ Step found: $step"
     else
-        echo "⚠️  Optional step missing: $step"
+        echo "⚠️  Recommended step missing: $step"
     fi
 done
 
@@ -50,10 +50,18 @@ else
     echo "⚠️  No Copilot setup documentation found"
 fi
 
-# Validate YAML syntax (requires npm package)
+# Validate YAML syntax
 echo ""
 echo "Validating YAML syntax..."
-if command -v npx &> /dev/null; then
+if command -v python3 &> /dev/null; then
+    if python3 -c "import yaml; yaml.safe_load(open('.github/workflows/copilot-setup-steps.yml'))" 2>/dev/null; then
+        echo "✅ YAML syntax is valid"
+    else
+        echo "❌ YAML syntax error detected!"
+        exit 1
+    fi
+elif command -v npx &> /dev/null; then
+    # Fallback to js-yaml if Python not available
     if npx js-yaml .github/workflows/copilot-setup-steps.yml > /dev/null 2>&1; then
         echo "✅ YAML syntax is valid"
     else
@@ -61,7 +69,7 @@ if command -v npx &> /dev/null; then
         exit 1
     fi
 else
-    echo "⚠️  Cannot validate YAML (js-yaml not installed)"
+    echo "⚠️  Cannot validate YAML (neither Python nor js-yaml available)"
 fi
 
 echo ""

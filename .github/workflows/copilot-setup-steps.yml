@@ -53,12 +53,14 @@ jobs:
       - name: Set up environment variables
         run: |
           cp .env.example .env
-          # Update DATABASE_URL to use the PostgreSQL service
+          # Update DATABASE_URL to match PostgreSQL service configuration
+          # Must match service credentials: tg_user/tg_pass/tg_payment_dev
           sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgresql://tg_user:tg_pass@localhost:5432/tg_payment_dev|g' .env
 
       - name: Run database migrations
         run: npm run migrate
         env:
+          # Use same credentials as PostgreSQL service above
           DATABASE_URL: postgresql://tg_user:tg_pass@localhost:5432/tg_payment_dev
 
       - name: Verify setup
