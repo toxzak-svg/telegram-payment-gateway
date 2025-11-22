@@ -54,8 +54,6 @@ export class DexAggregatorService {
   private tonService: TonBlockchainService;
   private retryHandler: DexRetryHandler;
   private simulationMode: boolean;
-  private keyPair: any;
-  private wallet: WalletContractV4;
 
   /**
    * Initialize wallet for swap execution
