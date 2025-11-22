@@ -100,7 +100,6 @@ export class StarsOrderModel {
        VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
       [data.sell_order_id, data.buy_order_id, data.smart_contract_address ?? null, data.ton_tx_hash ?? null, data.telegram_tx_id ?? null, data.status ?? 'pending', data.ton_amount, data.rate]
     );
-    return row;
   }
 
   async markOrdersMatched(sellId: string, buyId: string) {
