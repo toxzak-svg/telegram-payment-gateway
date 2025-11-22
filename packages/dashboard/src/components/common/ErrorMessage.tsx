@@ -1,7 +1,7 @@
 import { AlertCircle } from 'lucide-react';
 
 interface ErrorMessageProps {
-  error: any;
+  error: Error | { response?: { data?: { error?: { message?: string } } }; message?: string } | unknown;
   title?: string;
   retry?: () => void;
 }

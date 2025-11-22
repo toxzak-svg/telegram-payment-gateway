@@ -107,7 +107,7 @@ export interface WebhookEvent {
   status: 'pending' | 'delivered' | 'failed';
   statusCode?: number;
   attempts: number;
-  payload: any;
+  payload: Record<string, unknown>;
   response?: string;
   createdAt: string;
   deliveredAt?: string;

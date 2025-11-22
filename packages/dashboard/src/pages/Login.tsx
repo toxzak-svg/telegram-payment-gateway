@@ -29,9 +29,10 @@ export default function Login() {
     try {
       await login(apiKey);
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: { message?: string } } } };
       setError(
-        err.response?.data?.error?.message ||
+        error.response?.data?.error?.message ||
           'Invalid API key. Please check and try again.'
       );
     } finally {
