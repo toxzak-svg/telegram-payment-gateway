@@ -258,6 +258,7 @@ export class TonBlockchainService {
         if (tx.hash().toString('hex') === txHash) {
           // Check transaction description for exit code
           const { description } = tx;
+          
 
           // Verify transaction was successful
           // Only exitCode === 0 indicates success
@@ -271,6 +272,7 @@ export class TonBlockchainService {
               }
             }
           }
+          
 
           // Simplified: verify based on inclusion in transaction list
           // In production, check block height and confirmations

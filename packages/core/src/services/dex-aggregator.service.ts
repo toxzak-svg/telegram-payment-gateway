@@ -49,6 +49,8 @@ export class DexAggregatorService {
   private dedustApiUrl: string;
   private stonfiApiUrl: string;
   private client: TonClient;
+  private wallet: WalletContractV4 | null = null;
+  private keyPair: any = null;
   private tonService: TonBlockchainService;
   private retryHandler: DexRetryHandler;
   private simulationMode: boolean;
