@@ -1,9 +1,10 @@
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
 async function runSeeds() {
+  console.log('DATABASE_URL from seed script:', process.env.DATABASE_URL);
   const client = new Client({
     connectionString: process.env.DATABASE_URL
   });
@@ -17,10 +18,10 @@ async function runSeeds() {
 
     for (const file of files) {
       if (file.endsWith('.sql')) {
-        console.log(\`Running seed: \${file}\`);
+        console.log(`Running seed: ${file}`);
         const sql = fs.readFileSync(path.join(seedsDir, file), 'utf8');
         await client.query(sql);
-        console.log(\`✓ \${file} completed\`);
+        console.log(`✓ ${file} completed`);
       }
     }
 

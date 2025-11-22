@@ -18,12 +18,6 @@ export interface TransactionInfo {
   exitCode?: number;
 }
 
-export interface TransactionState {
-  status: 'confirmed' | 'pending' | 'failed';
-  confirmations: number;
-  transaction: TransactionInfo | null;
-}
-
 /**
  * TonBlockchainService
  * Direct TON blockchain integration (no Fragment API)
@@ -34,7 +28,6 @@ export class TonBlockchainService {
   private wallet: WalletContractV4 | null = null;
   private walletAddress: Address | null = null;
   private keyPair: any = null;
-  private activeIntervals?: Set<NodeJS.Timeout>;
 
   constructor(
     private endpoint: string,
@@ -197,17 +190,8 @@ export class TonBlockchainService {
     // Set up recurring polling
     const intervalId = setInterval(poll, intervalMs);
 
-    // Store interval ID for cleanup (prevent memory leak)
-    if (!this.activeIntervals) {
-      this.activeIntervals = new Set();
-    }
-    this.activeIntervals.add(intervalId);
-
     // Return cleanup function
-    return () => {
-      clearInterval(intervalId);
-      this.activeIntervals?.delete(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }
 
   /**
@@ -302,6 +286,7 @@ export class TonBlockchainService {
   }
 
   /**
+<<<<<<< HEAD
    * Get transaction details by hash
    */
   async getTransaction(txHash: string): Promise<TransactionInfo | null> {
@@ -359,6 +344,8 @@ export class TonBlockchainService {
   }
 
   /**
+=======
+>>>>>>> f52dc83 (feat: Implement P2P Stars-TON order matching service and API endpoints)
    * Validate TON address format
    */
   isValidAddress(address: string): boolean {

@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [apiKey]);
 
   const login = async (key: string) => {
+    console.log('[AuthContext] Attempting login with key:', key);
     localStorage.setItem('apiKey', key);
     setApiKey(key);
     try {

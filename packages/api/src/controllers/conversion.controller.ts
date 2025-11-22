@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { DirectConversionService, TonPaymentService } from '@tg-payment/core';
-import { pool } from '../db/connection';
+import { DirectConversionService } from '@tg-payment/core';
+import { db } from '../db/connection';
 
 // Interface for authenticated requests
 interface AuthenticatedRequest extends Request {
@@ -11,34 +11,14 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-class TonServiceStub {
-  async sendTon(): Promise<string> {
-    throw new Error('TON wallet not configured. Set TON_WALLET_MNEMONIC to enable conversions.');
-  }
-}
-
 export class ConversionController {
   private conversionService: DirectConversionService;
 
   constructor() {
-    const tonService = this.createTonService();
-    const minStars = parseInt(process.env.MIN_CONVERSION_STARS || '100', 10);
-    this.conversionService = new DirectConversionService(pool, tonService, minStars);
-  }
-
-  private createTonService(): TonPaymentService {
-    const mnemonic = process.env.TON_WALLET_MNEMONIC;
-    if (!mnemonic) {
-      console.warn('⚠️ TON_WALLET_MNEMONIC missing. Conversion execution will be disabled.');
-      return new TonServiceStub() as unknown as TonPaymentService;
-    }
-
-    return new TonPaymentService({
-      endpoint: process.env.TON_API_ENDPOINT || process.env.TON_API_URL || 'https://toncenter.com/api/v2/jsonRPC',
-      apiKey: process.env.TON_API_KEY,
-      mnemonic,
-      workchain: process.env.TON_WORKCHAIN ? parseInt(process.env.TON_WORKCHAIN, 10) : undefined,
-    });
+    // In production, inject these dependencies; for now use placeholder
+    const dummyPool = {} as any;
+    const dummyTonService = {} as any;
+    this.conversionService = new DirectConversionService(dummyPool, dummyTonService);
   }
 
   /**

@@ -1,13 +1,12 @@
 import { Request, Response } from 'express';
 import { v4 as uuid } from 'uuid';
-import { getDatabase, FeeService, AdminAnalyticsService } from '@tg-payment/core';
+import { getDatabase, FeeService } from '@tg-payment/core';
 
 export class AdminController {
   private static getServices() {
     const db = getDatabase();
     const feeService = new FeeService(db as any);
-    const analyticsService = new AdminAnalyticsService(db as any);
-    return { db, feeService, analyticsService };
+    return { db, feeService };
   }
 
   /**
@@ -16,12 +15,9 @@ export class AdminController {
   static async getStats(req: Request, res: Response) {
     const requestId = uuid();
     try {
-      const { analyticsService } = AdminController.getServices();
-      const stats = await analyticsService.getDashboardStats();
-
       return res.status(200).json({
         success: true,
-        stats,
+        stats: { totalUsers: 0, totalPayments: 0, totalConversions: 0 },
         requestId,
       });
     } catch (error: any) {
@@ -165,18 +161,18 @@ export class AdminController {
     const requestId = uuid();
 
     try {
-      const { analyticsService } = AdminController.getServices();
+      const { feeService } = AdminController.getServices();
       const { startDate, endDate } = req.query;
 
       const start = startDate
         ? new Date(startDate as string)
-        : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
       const end = endDate
         ? new Date(endDate as string)
         : new Date();
 
-      const summary = await analyticsService.getRevenueSummary(start, end);
+      const summary = await feeService.getRevenueSummary(start, end);
 
       return res.status(200).json({
         success: true,
@@ -198,45 +194,6 @@ export class AdminController {
   }
 
   /**
-   * GET /api/v1/admin/transactions/summary
-   */
-  static async getTransactionSummary(req: Request, res: Response) {
-    const requestId = uuid();
-
-    try {
-      const { analyticsService } = AdminController.getServices();
-      const { startDate, endDate } = req.query;
-
-      const start = startDate
-        ? new Date(startDate as string)
-        : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-      const end = endDate
-        ? new Date(endDate as string)
-        : new Date();
-
-      const summary = await analyticsService.getTransactionSummary(start, end);
-
-      return res.status(200).json({
-        success: true,
-        summary,
-        dateRange: {
-          start: start.toISOString(),
-          end: end.toISOString(),
-        },
-        requestId,
-      });
-    } catch (error: any) {
-      console.error('❌ Get transaction summary error:', error);
-      return res.status(500).json({
-        success: false,
-        error: { code: 'TRANSACTION_SUMMARY_ERROR', message: error.message },
-        requestId,
-      });
-    }
-  }
-
-  /**
    * GET /api/v1/admin/config
    */
   static async getConfig(req: Request, res: Response) {
@@ -250,9 +207,7 @@ export class AdminController {
         success: true,
         config: {
           platformFeePercentage: `${(config.platformFeePercentage * 100).toFixed(2)}%`,
-          dexFeePercentage: `${(config.dexFeePercentage * 100).toFixed(2)}%`,
-          dexSlippageTolerance: `${(config.dexSlippageTolerance * 100).toFixed(2)}%`,
-          preferredDexProvider: config.preferredDexProvider,
+          fragmentFeePercentage: `${(config.fragmentFeePercentage * 100).toFixed(2)}%`,
           networkFeePercentage: `${(config.networkFeePercentage * 100).toFixed(2)}%`,
           platformTonWallet: config.platformTonWallet,
           minConversionAmount: config.minConversionAmount,
@@ -279,9 +234,7 @@ export class AdminController {
       const { db } = AdminController.getServices();
       const {
         platformFeePercentage,
-        dexFeePercentage,
-        dexSlippageTolerance,
-        preferredDexProvider,
+        fragmentFeePercentage,
         networkFeePercentage,
         platformTonWallet,
         minConversionAmount,
@@ -296,19 +249,9 @@ export class AdminController {
         values.push(parseFloat(platformFeePercentage) / 100);
       }
 
-      if (dexFeePercentage !== undefined) {
-        updates.push(`dex_fee_percentage = $${paramIndex++}`);
-        values.push(parseFloat(dexFeePercentage) / 100);
-      }
-
-      if (dexSlippageTolerance !== undefined) {
-        updates.push(`dex_slippage_tolerance = $${paramIndex++}`);
-        values.push(parseFloat(dexSlippageTolerance) / 100);
-      }
-
-      if (preferredDexProvider) {
-        updates.push(`preferred_dex_provider = $${paramIndex++}`);
-        values.push(preferredDexProvider);
+      if (fragmentFeePercentage !== undefined) {
+        updates.push(`fragment_fee_percentage = $${paramIndex++}`);
+        values.push(parseFloat(fragmentFeePercentage) / 100);
       }
 
       if (networkFeePercentage !== undefined) {
