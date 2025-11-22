@@ -255,7 +255,7 @@ export class P2PLiquidityService {
       const { source_amount, source_currency, target_currency, rate: lockedRate } = conversion;
 
       const bestQuote = await this.dexAggregator.getBestRate(source_currency, target_currency, source_amount);
-      const {poolId} = bestQuote.bestPool;
+      const { poolId } = bestQuote.bestPool;
       const slippageTolerance = 0.05; // 5%
       const minOutput = source_amount * bestQuote.rate * (1 - slippageTolerance);
 
@@ -285,7 +285,7 @@ export class P2PLiquidityService {
     if (from === 'STARS' && to === 'TON') {
       return '0.000015';
     }
-    return '0';
+    throw new Error(`Unsupported currency pair: ${from} -> ${to}`);
   }
 
   /**

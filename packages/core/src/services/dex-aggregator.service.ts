@@ -374,25 +374,38 @@ export class DexAggregatorService {
     amount: number,
     minOutput: number
   ): Promise<SwapResult> {
-    console.log(
-      `[SIMULATION] Executing ${provider} swap: ${amount} ${fromToken} → ${toToken}`
-    );
+    // Optional provider-specific poolId validation to keep previous semantics
+    if (provider === 'dedust') {
+      // DeDust pools are typically represented as workchain:hex64 (e.g. "0:abcd...").
+      // This keeps us close to previous behavior by failing fast on obviously bad IDs.
+      const dedustPoolIdPattern = /^-?\d+:[0-9a-fA-F]{64}$/;
+      if (!dedustPoolIdPattern.test(poolId)) {
+        throw new Error(`Invalid DeDust pool id: ${poolId}`);
+      }
+    }
 
-    // Simulate a successful swap with some random data
-    const simulatedTxHash = `simulated_tx_${Date.now()}_${Math.random()
-      .toString(36)
-      .substring(2, 15)}`;
-    const simulatedOutputAmount = amount * 0.98; // Simulate ~2% slippage/fees
-    const simulatedGasUsed = 0.05;
+    // Simple mock rate: 1:1 with ~2% slippage to preserve "simulation" behavior
+    const baseRate = 1; // 1 fromToken -> 1 toToken before slippage
+    const slippageFraction = 0.02; // 2% slippage
+    const expectedOutput = amount * baseRate;
+    const simulatedOutput = expectedOutput * (1 - slippageFraction);
 
-    console.log(`[SIMULATION] TX Hash: ${simulatedTxHash}`);
-    console.log(`[SIMULATION] Output Amount: ${simulatedOutputAmount}`);
+    // Enforce minOutput so callers/tests still see slippage-related failures
+    if (simulatedOutput < minOutput) {
+      // Preserve slippage-style failure semantics (message can be aligned with real implementation)
+      throw new Error(
+        `Simulated swap output ${simulatedOutput} is below minOutput ${minOutput}`
+      );
+    }
 
-    return {
-      txHash: simulatedTxHash,
-      outputAmount: simulatedOutputAmount,
-      gasUsed: simulatedGasUsed,
+    // Build a simulated SwapResult.
+    const result: SwapResult = {
+      txHash: `simulated_tx_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+      outputAmount: simulatedOutput,
+      gasUsed: 0.05,
     };
+
+    return result;
   }
 
   private buildMockQuote(
