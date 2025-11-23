@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentService } from '../api/services';
+import { ApiResponse, Payment } from '../types';
 import Pagination from '../components/common/Pagination';
 import { exportToCsv } from '../utils/exportCsv';
 
@@ -8,12 +9,13 @@ export default function Transactions() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const { data: paymentsResp, isLoading } = useQuery<any>(['payments', { page, pageSize }], () =>
-    paymentService.getPayments({ limit: pageSize, offset: (page - 1) * pageSize })
+  const { data: paymentsResp, isLoading } = useQuery<ApiResponse<Payment[]>>(
+    ['payments', { page, pageSize }],
+    () => paymentService.getPayments({ limit: pageSize, offset: (page - 1) * pageSize })
   );
 
-  const items = Array.isArray(paymentsResp) ? paymentsResp : paymentsResp?.items || [];
-  const total = Array.isArray(paymentsResp) ? items.length : paymentsResp?.meta?.total ?? items.length;
+  const items = paymentsResp && 'data' in (paymentsResp as any) ? (paymentsResp as any).data : Array.isArray(paymentsResp) ? (paymentsResp as any) : [];
+  const total = paymentsResp && 'meta' in (paymentsResp as any) ? (paymentsResp as any).meta?.total ?? items.length : items.length;
 
   return (
     <div>

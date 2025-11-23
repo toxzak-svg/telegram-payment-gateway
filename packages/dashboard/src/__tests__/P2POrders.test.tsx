@@ -1,53 +1,73 @@
 import React from 'react';
+import '@testing-library/jest-dom';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
-import P2POrders from '../pages/P2POrders';
+import { BrowserRouter } from 'react-router-dom';
 import * as services from '../api/services';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import P2POrders from '../pages/P2POrders';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-vi.mock('react-hot-toast', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('react-hot-toast', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
-describe('P2POrders cancel flow', () => {
-  const queryClient = new QueryClient();
+// Provide a mutable mocked return for useQuery so we don't need a QueryClientProvider in tests
+let mockedQueryReturn: any = { data: null, isLoading: false };
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: () => mockedQueryReturn,
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
 
+describe('P2POrders confirm/cancel flow', () => {
   beforeEach(() => {
-    queryClient.clear();
+    mockedQueryReturn = { data: null, isLoading: false };
   });
 
-  it('shows confirm dialog and calls cancelOrder', async () => {
+  it('shows confirm dialog and calls cancelOrder on confirm', async () => {
     const mockOrder = {
-      id: 'order1',
+      id: 'order_1',
       type: 'sell',
-      userId: 'user1',
+      userId: 'user_1',
       starsAmount: 100,
       tonAmount: '0.1',
-      rate: '100',
+      rate: '1000',
       status: 'open',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    const getOrders = vi.spyOn(services.p2pService, 'getOrders').mockResolvedValue({ items: [mockOrder], meta: { total: 1 } } as any);
-    const cancelOrder = vi.spyOn(services.p2pService, 'cancelOrder').mockResolvedValue(undefined as any);
+    vi.spyOn(services.p2pService, 'getOrders').mockResolvedValue({
+      success: true,
+      data: [mockOrder],
+      meta: { total: 1 },
+    } as any);
+
+    // feed the mockedQueryReturn so the component receives data without react-query provider
+    mockedQueryReturn = { data: { success: true, data: [mockOrder], meta: { total: 1 } }, isLoading: false };
+    const cancelSpy = vi.spyOn(services.p2pService, 'cancelOrder').mockResolvedValue(undefined as any);
 
     render(
-      <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
         <P2POrders />
-      </QueryClientProvider>
+      </BrowserRouter>
     );
 
-    // wait for table row
-    await waitFor(() => expect(screen.getByText('order1')).toBeInTheDocument());
+    // wait for row to appear
+    await waitFor(() => expect(screen.getByText(/order_1/i)).toBeInTheDocument());
 
-    // click cancel
-    userEvent.click(screen.getByRole('button', { name: /Cancel/i }));
+    const cancelButtons = screen.getAllByRole('button', { name: /cancel/i });
+    const cancelButton = cancelButtons.find(b => (b.textContent || '').trim().toLowerCase() === 'cancel') || cancelButtons[0];
+    await userEvent.click(cancelButton as HTMLElement);
 
-    // confirm dialog should appear
-    await waitFor(() => expect(screen.getByText(/Cancel Order/)).toBeInTheDocument());
+    // confirm dialog appears (heading)
+    expect(screen.getByRole('heading', { name: /Cancel Order/i })).toBeInTheDocument();
 
-    userEvent.click(screen.getByRole('button', { name: /Confirm/i }));
+    const confirmButton = screen.getByRole('button', { name: /confirm/i });
+    await userEvent.click(confirmButton);
 
-    await waitFor(() => expect(cancelOrder).toHaveBeenCalledWith('order1'));
+    await waitFor(() => expect(cancelSpy).toHaveBeenCalledWith('order_1'));
   });
 });

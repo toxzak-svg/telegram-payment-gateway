@@ -5,7 +5,7 @@ import Pagination from '../components/common/Pagination';
 import { exportToCsv } from '../utils/exportCsv';
 import { toast } from 'react-hot-toast';
 import ConfirmDialog from '../components/common/ConfirmDialog';
-import { P2POrder as P2POrderType } from '../types';
+import { P2POrder as P2POrderType, ApiResponse } from '../types';
 
 type LocalOrder = P2POrderType;
 
@@ -25,18 +25,14 @@ export default function P2POrders() {
   const [selectedOrder, setSelectedOrder] = useState<P2POrderType | null>(null);
 
   const queryClient = useQueryClient();
-  const { data: ordersResp, isLoading } = useQuery<
-    P2POrderType[] | { items: P2POrderType[]; meta?: { total?: number } }
-  >({
+  const { data: ordersResp, isLoading } = useQuery<ApiResponse<P2POrderType[]>>({
     queryKey: ['p2p-orders', { page, pageSize }],
     queryFn: () => p2pService.getOrders({ limit: pageSize, offset: (page - 1) * pageSize }),
   });
 
-  // ordersResp may be an array or an object with { items, meta }
-  const items: P2POrderType[] = Array.isArray(ordersResp)
-    ? (ordersResp as P2POrderType[])
-    : (ordersResp?.items || []);
-  const total = Array.isArray(ordersResp) ? items.length : (ordersResp && 'meta' in ordersResp ? ordersResp.meta?.total ?? items.length : items.length);
+  // ordersResp may be an ApiResponse<{ data, meta }> or a plain array fallback
+  const items: P2POrderType[] = ordersResp && 'data' in (ordersResp as any) ? (ordersResp as any).data : Array.isArray(ordersResp) ? (ordersResp as any) : [];
+  const total = ordersResp && 'meta' in (ordersResp as any) ? (ordersResp as any).meta?.total ?? items.length : items.length;
 
   const filteredOrders = filter === 'all' ? items : items.filter((o) => o.status === filter);
 

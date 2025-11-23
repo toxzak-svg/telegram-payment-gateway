@@ -13,8 +13,11 @@ import Settings from './pages/Settings';
 import P2POrders from './pages/P2POrders';
 import DexAnalytics from './pages/DexAnalytics';
 import Webhooks from './pages/Webhooks';
+import useTheme from './hooks/useTheme';
 
 function App() {
+  // initialize theme (applies dark class on documentElement)
+  useTheme();
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

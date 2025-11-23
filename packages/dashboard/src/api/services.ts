@@ -18,11 +18,11 @@ export const paymentService = {
     limit?: number;
     offset?: number;
     status?: string;
-  }): Promise<Payment[]> {
+  }): Promise<ApiResponse<Payment[]>> {
     const { data } = await apiClient.get<ApiResponse<Payment[]>>('/payments', {
       params,
     });
-    return (data as any).data;
+    return data as any;
   },
 
   async getPayment(id: string): Promise<Payment> {
@@ -133,14 +133,12 @@ export const p2pService = {
     status?: string;
     limit?: number;
     offset?: number;
-  }): Promise<P2POrder[]> {
+  }): Promise<ApiResponse<P2POrder[]>> {
     const { data } = await apiClient.get<ApiResponse<P2POrder[]>>(
       '/p2p/orders',
       { params }
     );
-    // Return raw API payload; caller expects { items, meta } or an array fallback
-    // Some APIs return `{ success,data,meta }` while others return plain array.
-    return (data as any).data;
+    return data as any;
   },
 
   async createOrder(order: {
@@ -207,7 +205,7 @@ export const webhookService = {
     limit?: number;
     offset?: number;
     status?: string;
-  }): Promise<WebhookEvent[]> {
+  }): Promise<ApiResponse<WebhookEvent[]>> {
     const { data} = await apiClient.get<ApiResponse<WebhookEvent[]>>(
       '/webhooks/events',
       { params }
