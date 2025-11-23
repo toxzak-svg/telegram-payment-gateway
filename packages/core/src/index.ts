@@ -21,6 +21,7 @@ export { WebhookService } from './services/webhook.service';
 export { ReconciliationService } from './services/reconciliation.service';
 export { WithdrawalService } from './services/withdrawal.service';
 export { StarsP2PService } from './services/stars-p2p.service';
+export { AuthService } from './services/auth.service';
 export { StarsOrderModel } from './models/stars-order.model';
 export * from './services/wallet-manager.service';
 export * from './services/webhook.service';

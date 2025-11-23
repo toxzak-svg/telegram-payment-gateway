@@ -7,6 +7,7 @@ import FeeCollectionController from '../controllers/fee-collection.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import P2POrdersController from '../controllers/p2p-orders.controller';
 import webhookRoutes from './webhooks.routes';
+import AuthController from '../controllers/auth.controller';
 
 const router = Router();
 const conversionController = new ConversionController();
@@ -18,6 +19,13 @@ router.get('/health', (req, res) => {
 
 // Webhook routes
 router.use('/webhooks', webhookRoutes);
+
+// Auth (passwordless) routes — feature-flagged in controller
+router.post('/auth/magic-link', AuthController.requestMagicLink);
+router.post('/auth/magic-link/verify', AuthController.verifyMagicLink);
+router.post('/auth/totp/verify', AuthController.totpVerify);
+router.post('/auth/totp/enable', AuthController.enableTotp);
+router.post('/auth/logout', AuthController.logout);
 
 // Payment routes
 router.post('/payments/webhook', PaymentController.handleTelegramWebhook);

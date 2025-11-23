@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Key, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Login() {
   const [apiKey, setApiKey] = useState('');
@@ -112,6 +113,14 @@ export default function Login() {
               </a>
             </p>
           </div>
+
+          {import.meta.env.VITE_FEATURE_PASSWORDLESS_AUTH === 'true' && (
+            <div className="mt-4 text-center">
+              <Link to="/auth/passwordless" className="text-sm text-blue-600 hover:underline">
+                Sign in with email (passwordless)
+              </Link>
+            </div>
+          )}
         </div>
 
         <p className="text-center text-sm text-gray-600 mt-6">
