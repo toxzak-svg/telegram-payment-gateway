@@ -113,9 +113,14 @@ export class StarsOrderModel {
     return this.updateStatus(id, 'cancelled', { completed_at: new Date() });
   }
 
-  async listOpenOrders(type?: 'sell' | 'buy', limit = 50) {
-    if (type) return this.db.any('SELECT * FROM stars_orders WHERE status = $1 AND type = $2 ORDER BY created_at DESC LIMIT $3', ['open', type, limit]);
-    return this.db.any('SELECT * FROM stars_orders WHERE status = $1 ORDER BY created_at DESC LIMIT $2', ['open', limit]);
+  async listOpenOrders(type?: 'sell' | 'buy', limit = 50, offset = 0) {
+    if (type) return this.db.any('SELECT * FROM stars_orders WHERE status = $1 AND type = $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4', ['open', type, limit, offset]);
+    return this.db.any('SELECT * FROM stars_orders WHERE status = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3', ['open', limit, offset]);
+  }
+
+  async countOpenOrders(type?: 'sell' | 'buy') {
+    if (type) return this.db.one('SELECT COUNT(*)::int as total FROM stars_orders WHERE status = $1 AND type = $2', ['open', type]);
+    return this.db.one('SELECT COUNT(*)::int as total FROM stars_orders WHERE status = $1', ['open']);
   }
 }
 

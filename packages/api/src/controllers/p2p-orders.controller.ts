@@ -32,10 +32,26 @@ export class P2POrdersController {
   static async listOpenOrders(req: Request, res: Response, next: NextFunction) {
     try {
       const type = req.query.type as 'sell' | 'buy' | undefined;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+      const offset = (page - 1) * limit;
+
       const db = getDatabase();
       const model = new StarsOrderModel(db);
-      const orders = await model.listOpenOrders(type, 100);
-      res.status(200).json({ success: true, orders });
+      const orders = await model.listOpenOrders(type, limit, offset);
+      const totalRow: any = await model.countOpenOrders(type);
+      const total = totalRow?.total ?? 0;
+
+      res.status(200).json({
+        success: true,
+        data: orders,
+        meta: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      });
     } catch (err) {
       next(err);
     }

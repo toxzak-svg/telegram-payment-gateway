@@ -181,14 +181,14 @@ export class PaymentController {
 
       res.status(200).json({
         success: true,
-        payments: payments.map(p => ({
+        data: payments.map(p => ({
           id: p.id,
           starsAmount: p.starsAmount,
           status: p.status,
           telegramPaymentId: p.telegramPaymentId,
           createdAt: p.createdAt
         })),
-        pagination: {
+        meta: {
           page,
           limit,
           total,

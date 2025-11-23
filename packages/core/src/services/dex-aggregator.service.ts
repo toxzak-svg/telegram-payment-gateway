@@ -46,6 +46,14 @@ export interface SwapResult {
  * Finds best rates and executes swaps on-chain.
  */
 export class DexAggregatorService {
+  private tonService: TonBlockchainService;
+  private dedustApiUrl: string;
+  private stonfiApiUrl: string;
+  private simulationMode: boolean;
+  private client: any;
+  private retryHandler: DexRetryHandler;
+  private keyPair: any | undefined;
+  private wallet: any | undefined;
 
     constructor(tonService?: TonBlockchainService) {
       this.tonService = tonService || new TonBlockchainService(
